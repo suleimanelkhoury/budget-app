@@ -1,0 +1,65 @@
+/**
+ * BudgetCard — card showing a budget summary on the dashboard.
+ *
+ * Displays the budget title, month/year, and quick stats (income, expenses,
+ * balance). Clicking the card navigates to the budget detail page.
+ */
+
+import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { budgetsApi } from '../api';
+import { formatCurrency, formatMonthYear } from '../utils/format';
+import type { Budget } from '../types';
+
+export function BudgetCard({ budget }: { budget: Budget }) {
+  const navigate = useNavigate();
+
+  // Fetch summary for quick stats
+  const { data: summary } = useQuery({
+    queryKey: ['budget-summary', budget.id],
+    queryFn: () => budgetsApi.getSummary(budget.id),
+  });
+
+  const balance = summary ? parseFloat(summary.actual_balance) : 0;
+  const balanceColor =
+    balance >= 0
+      ? 'text-green-600 dark:text-green-400'
+      : 'text-red-600 dark:text-red-400';
+
+  return (
+    <div
+      onClick={() => navigate(`/budgets/${budget.id}`)}
+      className="cursor-pointer rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
+    >
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          {budget.title}
+        </h3>
+        <span className="text-sm text-gray-500 dark:text-gray-500">
+          {formatMonthYear(budget.month, budget.year)}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4 text-sm">
+        <div>
+          <p className="text-gray-500 dark:text-gray-500">Income</p>
+          <p className="font-semibold text-gray-900 dark:text-gray-100">
+            {summary ? formatCurrency(summary.total_actual_income) : '—'}
+          </p>
+        </div>
+        <div>
+          <p className="text-gray-500 dark:text-gray-500">Expenses</p>
+          <p className="font-semibold text-gray-900 dark:text-gray-100">
+            {summary ? formatCurrency(summary.total_actual_expenses) : '—'}
+          </p>
+        </div>
+        <div>
+          <p className="text-gray-500 dark:text-gray-500">Balance</p>
+          <p className={`font-semibold ${balanceColor}`}>
+            {summary ? formatCurrency(summary.actual_balance) : '—'}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}

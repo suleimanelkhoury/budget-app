@@ -1,0 +1,37 @@
+# ── Ruff configuration for the backend ───────
+# https://docs.astral.sh/ruff/configuration/
+
+target-version = "py311"
+line-length = 88
+extend-exclude = [".venv", "alembic/versions"]
+
+[lint]
+# Enable a broad set of rule groups:
+#   E/W   — pycodestyle errors & warnings
+#   F     — pyflakes (unused imports, undefined names, etc.)
+#   I     — isort (import ordering)
+#   N     — pep8-naming
+#   UP    — pyupgrade
+#   B     — flake8-bugbear
+#   SIM   — flake8-simplify
+#   C4    — flake8-comprehensions
+#   TCH   — flake8-type-checking
+#   RUF   — ruff-specific rules
+select = ["E", "W", "F", "I", "N", "UP", "B", "SIM", "C4", "TCH", "RUF"]
+
+# Ignore rules that conflict with common patterns
+ignore = [
+  "E501",  # line too long — handled by formatter
+]
+
+[lint.per-file-ignores]
+"tests/*" = ["S101"]  # allow assert in tests
+# FastAPI uses Depends() in argument defaults by design
+"app/api/*.py" = ["B008"]
+"app/core/deps.py" = ["B008"]
+
+[format]
+# Use double quotes, matching Black's default
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"

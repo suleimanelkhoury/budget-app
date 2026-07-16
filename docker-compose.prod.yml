@@ -1,0 +1,79 @@
+# ── Budget App — Production Docker Compose ────
+# Usage:
+#   docker compose -f docker-compose.prod.yml up --build -d
+#
+# This file uses production builds:
+#   - Backend: uvicorn (no --reload)
+#   - Frontend: nginx serving the built static files
+#   - PostgreSQL: with persistent volume
+#
+# Required environment variables (set in .env or export):
+#   POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
+#   SECRET_KEY (use a strong random string!)
+#   FRONTEND_DOMAIN (e.g., https://budget.example.com)
+
+services:
+  # ── PostgreSQL database ─────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: budget-db-prod
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Don't expose the DB port to the host in production
+    expose:
+      - "5432"
+
+  # ── FastAPI backend (production) ────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: budget-backend-prod
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: "false"
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-["http://localhost:3000"]}
+    expose:
+      - "8000"
+    # Run Alembic migrations on startup, then start uvicorn (no --reload)
+    command: >
+      sh -c "python -m alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ── Frontend (nginx serving production build) ──
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: budget-frontend-prod
+    restart: always
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    # nginx proxies /api/ to the backend service (see nginx.conf)
+
+volumes:
+  postgres_data:

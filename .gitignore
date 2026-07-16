@@ -1,0 +1,94 @@
+# ─────────────────────────────────────────────
+# OS / Editor
+# ─────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ─────────────────────────────────────────────
+# Environment
+# ─────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+!.env.prod.example
+*.local
+
+# ─────────────────────────────────────────────
+# Python (backend)
+# ─────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+pip-wheel-metadata/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+instance/
+.webassets-cache
+
+# ─────────────────────────────────────────────
+# Node.js (frontend)
+# ─────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+.npm
+.yarn/cache
+.yarn/install-state.gz
+.yarn/build-state.yml
+.pnp.*
+coverage/
+*.tsbuildinfo
+.eslintcache
+.npmrc
+
+# ─────────────────────────────────────────────
+# Build outputs
+# ─────────────────────────────────────────────
+frontend/dist/
+frontend/build/
+backend/dist/
+
+# ─────────────────────────────────────────────
+# Logs
+# ─────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+
+# ─────────────────────────────────────────────
+# Docker
+# ─────────────────────────────────────────────
+docker-compose.override.yml
+
+# ─────────────────────────────────────────────
+# Databases
+# ─────────────────────────────────────────────
+*.sqlite
+*.sqlite3
+*.db
+postgres_data/

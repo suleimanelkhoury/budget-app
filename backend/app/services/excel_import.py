@@ -351,9 +351,22 @@ def parse_excel_and_create_budget(
     except Exception as exc:
         raise ValueError(f"Could not read Excel file: {exc}") from exc
 
-    ws = wb.active
+    # Always prefer the "BUDGET" sheet over whichever sheet happens to be
+    # active. The workbook's two-column-block template stores the parseable
+    # data on the "BUDGET" sheet, while "DIAGRAMME" is a small chart sheet
+    # (Category | Subcategory | Cost). If the file was last saved with the
+    # "DIAGRAMME" tab selected, wb.active points to the wrong sheet and the
+    # import silently yields 0 categories / 0 income / 0 items.
+    ws = None
+    for sheet in wb.worksheets:
+        name = (sheet.title or "").strip().upper()
+        if name == "BUDGET" or "BUDGET" in name:
+            ws = sheet
+            break
     if ws is None:
-        raise ValueError("Excel file has no active worksheet.")
+        ws = wb.active
+    if ws is None:
+        raise ValueError("Excel file has no worksheets.")
 
     max_row = ws.max_row or 0
 

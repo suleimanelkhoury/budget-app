@@ -261,3 +261,56 @@ class TestExcelImport:
         assert detail["incomes"][0]["actual_amount"] == "2600.50"
         assert detail["categories"][0]["items"][0]["projected_cost"] == "900.00"
         assert detail["categories"][0]["items"][0]["actual_cost"] == "850.50"
+
+    def test_import_uses_budget_sheet_even_when_not_active(self, client, auth_headers):
+        """Import parses the BUDGET sheet even when DIAGRAMME is the active tab.
+
+        Regression test: the parser previously relied on `wb.active`, which
+        openpyxl resolves from the file's activeTab index. If a monthly budget
+        file is saved with the "DIAGRAMME" tab selected (a small chart sheet
+        with only Category/Subcategory/Cost columns), the import silently
+        produced 0 income entries, 0 categories, and 0 expense items.
+        """
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "DIAGRAMME"
+        ws.append(["Category", "Subcategory", "Cost"])
+        ws.append(["Wohnen", "Miete", 595])
+
+        # BUDGET sheet holds the real parseable data
+        budget_ws = wb.create_sheet("BUDGET")
+        budget_ws["B2"] = "OKTOBER 2025 BUDGET"
+        budget_ws["C4"] = "Einkommen"
+        budget_ws["E4"] = 2837.01
+        budget_ws["C8"] = "Einkommen"
+        budget_ws["E8"] = 2837.01
+        budget_ws["B12"] = "WOHNEN"
+        budget_ws["C12"] = "Geschätzte Kosten"
+        budget_ws["D12"] = "Tatsächl. Kosten"
+        budget_ws["B13"] = "Miete"
+        budget_ws["C13"] = 595
+        budget_ws["D13"] = 595
+
+        # Make DIAGRAMME the active tab (as in the real Oktober 2025 file)
+        wb.active = 0
+
+        buf = BytesIO()
+        wb.save(buf)
+
+        response = client.post(
+            "/api/budgets/import",
+            files={
+                "file": (
+                    "oktober.xlsx",
+                    buf.getvalue(),
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                )
+            },
+            headers=auth_headers,
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["budget_title"] == "OKTOBER 2025 BUDGET"
+        assert data["income_imported"] == 1
+        assert data["categories_imported"] == 1
+        assert data["items_imported"] == 1

@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
-from app.core.exceptions import BadRequestError
+from app.core.exceptions import BadRequestError, ConflictError
 from app.models.user import User
 from app.schemas.excel import ExcelImportResponse
 from app.services.excel_import import parse_excel_and_create_budget
@@ -56,6 +56,9 @@ async def import_budget(
         budget, cat_count, income_count, items_count = parse_excel_and_create_budget(
             file_bytes, current_user, db
         )
+    except ConflictError:
+        # A budget with identical content already exists — propagate as 409.
+        raise
     except ValueError as exc:
         raise BadRequestError(
             detail_en=str(exc),

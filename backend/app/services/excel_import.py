@@ -18,11 +18,14 @@ three columns) as a fallback.
 """
 
 from decimal import Decimal, InvalidOperation
+from hashlib import sha256
 from io import BytesIO
 
 from openpyxl import load_workbook
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.orm import Session, selectinload
 
+from app.core.exceptions import ConflictError
 from app.models.budget import Budget
 from app.models.category import Category
 from app.models.expense_item import ExpenseItem
@@ -511,14 +514,16 @@ def parse_excel_and_create_budget(
                 )
                 # Only add items that have a label and at least one number
                 if projected != Decimal("0") or actual != Decimal("0"):
-                    db.add(
-                        ExpenseItem(
-                            category_id=current_category.id,
-                            label=label,
-                            projected_cost=projected,
-                            actual_cost=actual,
-                        )
+                    item = ExpenseItem(
+                        category_id=current_category.id,
+                        label=label,
+                        projected_cost=projected,
+                        actual_cost=actual,
                     )
+                    # Attach to the relationship so the duplicate fingerprint
+                    # can read the freshly parsed items in-memory.
+                    current_category.items.append(item)
+                    db.add(item)
                     items_count += 1
 
     # Add income entries
@@ -531,6 +536,11 @@ def parse_excel_and_create_budget(
             "No valid budget data found in the Excel file. "
             "Expected categories (Wohnen, Transport, etc.) and/or income rows."
         )
+
+    # ── Duplicate detection ───────────────────
+    # Refuse the import if a budget with the exact same content (title,
+    # month, year, incomes, categories, items) already exists for this user.
+    _assert_not_duplicate(budget, incomes, categories, user, db)
 
     db.commit()
     db.refresh(budget)
@@ -563,3 +573,147 @@ def _try_parse_title_for_date(title: str, budget: Budget) -> None:
             budget.month = GERMAN_MONTHS[part]
         elif part.isdigit() and 1900 <= int(part) <= 2100:
             budget.year = int(part)
+
+
+def _normalize_amount(value: Decimal) -> str:
+    """Normalize a Decimal to a canonical string for fingerprinting."""
+    return f"{value.quantize(Decimal('0.01'))}"
+
+
+def _budget_fingerprint(
+    title: str,
+    month: int,
+    year: int,
+    incomes: list[dict[str, str]],
+    categories_items: list[tuple[str, list[dict[str, str]]]],
+) -> str:
+    """Compute a deterministic fingerprint for a budget's content.
+
+    Two budgets are considered duplicates when their normalized title, month,
+    year, incomes, categories, and expense items (with amounts) all match.
+    """
+    h = sha256()
+
+    def feed(s: str) -> None:
+        h.update(s.encode("utf-8"))
+        h.update(b"\x1e")  # record separator
+
+    feed(title.strip().lower())
+    feed(str(month))
+    feed(str(year))
+
+    for income in sorted(incomes, key=lambda i: i["label"]):
+        feed(income["label"])
+        feed(income["projected"])
+        feed(income["actual"])
+
+    for cat_name, items in sorted(categories_items, key=lambda c: c[0]):
+        feed(cat_name)
+        for item in sorted(items, key=lambda i: i["label"]):
+            feed(item["label"])
+            feed(item["projected"])
+            feed(item["actual"])
+
+    return h.hexdigest()
+
+
+def _existing_budget_fingerprints(
+    db: Session, user: User
+) -> dict[int, str]:
+    """Return {budget_id: fingerprint} for every budget belonging to `user`."""
+    budgets = list(
+        db.scalars(
+            select(Budget)
+            .where(Budget.user_id == user.id)
+            .options(
+                # Eager-load categories/items/incomes so we can fingerprint them
+                selectinload(Budget.categories).selectinload(
+                    Category.items
+                ),
+                selectinload(Budget.incomes),
+            )
+        )
+    )
+
+    result: dict[int, str] = {}
+    for b in budgets:
+        incomes = [
+            {
+                "label": inc.label,
+                "projected": _normalize_amount(inc.projected_amount),
+                "actual": _normalize_amount(inc.actual_amount),
+            }
+            for inc in (b.incomes or [])
+        ]
+        cats_items: list[tuple[str, list[dict[str, str]]]] = []
+        for cat in sorted(b.categories or [], key=lambda c: c.name.lower()):
+            items = [
+                {
+                    "label": item.label,
+                    "projected": _normalize_amount(item.projected_cost),
+                    "actual": _normalize_amount(item.actual_cost),
+                }
+                for item in (cat.items or [])
+            ]
+            cats_items.append((cat.name, items))
+
+        result[b.id] = _budget_fingerprint(
+            b.title, b.month, b.year, incomes, cats_items
+        )
+    return result
+
+
+def _import_fingerprint(
+    budget: Budget,
+    incomes: list[Income],
+    categories: list[Category],
+) -> str:
+    """Compute the fingerprint of a freshly-parsed (uncommitted) import."""
+    income_data = [
+        {
+            "label": inc.label,
+            "projected": _normalize_amount(inc.projected_amount),
+            "actual": _normalize_amount(inc.actual_amount),
+        }
+        for inc in incomes
+    ]
+    cats_items: list[tuple[str, list[dict[str, str]]]] = []
+    for cat in categories:
+        items = [
+            {
+                "label": item.label,
+                "projected": _normalize_amount(item.projected_cost),
+                "actual": _normalize_amount(item.actual_cost),
+            }
+            for item in cat.items
+        ]
+        cats_items.append((cat.name, items))
+
+    return _budget_fingerprint(
+        budget.title, budget.month, budget.year, income_data, cats_items
+    )
+
+
+def _assert_not_duplicate(
+    budget: Budget,
+    incomes: list[Income],
+    categories: list[Category],
+    user: User,
+    db: Session,
+) -> None:
+    """Raise ConflictError if a budget with identical content already exists."""
+    incoming = _import_fingerprint(budget, incomes, categories)
+    for _budget_id, existing in _existing_budget_fingerprints(
+        db, user
+    ).items():
+        if existing == incoming:
+            raise ConflictError(
+                detail_en=(
+                    "This Excel file has already been imported (a budget with "
+                    "the exact same data already exists)."
+                ),
+                detail_de=(
+                    "Diese Excel-Datei wurde bereits importiert (ein Budget mit "
+                    "den exakt gleichen Daten existiert bereits)."
+                ),
+            )

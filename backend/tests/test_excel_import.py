@@ -314,3 +314,63 @@ class TestExcelImport:
         assert data["income_imported"] == 1
         assert data["categories_imported"] == 1
         assert data["items_imported"] == 1
+
+    def _import_excel(self, client, auth_headers, excel_bytes, filename="budget.xlsx"):
+        return client.post(
+            "/api/budgets/import",
+            files={
+                "file": (
+                    filename,
+                    excel_bytes,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                )
+            },
+            headers=auth_headers,
+        )
+
+    def test_import_duplicate_rejected(self, client, auth_headers):
+        """Importing the same Excel file twice returns 409 conflict."""
+        excel_bytes = _make_excel(
+            title="Juli 2026",
+            incomes=[("Einkommen", 2500, 2500), ("Extra", 300, 450)],
+            categories=[
+                ("Wohnen", [("Miete", 900, 900), ("Strom", 80, 75)]),
+                ("Transport", [("Benzin", 150, 165)]),
+            ],
+        )
+
+        # First import succeeds
+        first = self._import_excel(client, auth_headers, excel_bytes)
+        assert first.status_code == 201
+
+        # Second identical import is refused as a duplicate
+        second = self._import_excel(client, auth_headers, excel_bytes)
+        assert second.status_code == 409
+
+    def test_import_different_data_not_duplicate(self, client, auth_headers):
+        """A file with different amounts is NOT treated as a duplicate."""
+        excel_bytes = _make_excel(
+            title="Juli 2026",
+            incomes=[("Einkommen", 2500, 2500)],
+            categories=[("Wohnen", [("Miete", 900, 900)])],
+        )
+        assert self._import_excel(client, auth_headers, excel_bytes).status_code == 201
+
+        different = _make_excel(
+            title="Juli 2026",
+            incomes=[("Einkommen", 2500, 2600)],  # actual amount differs
+            categories=[("Wohnen", [("Miete", 900, 850)])],
+        )
+        resp = self._import_excel(client, auth_headers, different)
+        assert resp.status_code == 201
+
+    def test_import_duplicate_across_users_allowed(self, client, auth_headers, second_auth_headers):
+        """The same file can be imported by two different users."""
+        excel_bytes = _make_excel(
+            title="Juli 2026",
+            incomes=[("Einkommen", 2500, 2500)],
+            categories=[("Wohnen", [("Miete", 900, 900)])],
+        )
+        assert self._import_excel(client, auth_headers, excel_bytes).status_code == 201
+        # A different user can import the same data
+        assert self._import_excel(client, second_auth_headers, excel_bytes).status_code == 201

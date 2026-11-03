@@ -7,6 +7,7 @@
  */
 
 import axios, { type AxiosInstance } from 'axios';
+import { ACCESS_TOKEN_KEY, USER_KEY } from '../utils/storage';
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
 const API_PREFIX = import.meta.env.VITE_API_PREFIX ?? '/api';
@@ -21,7 +22,7 @@ export const api: AxiosInstance = axios.create({
 // ── Request interceptor: attach JWT token ────
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -36,8 +37,8 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Token expired or invalid — clear it and redirect to login
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user');
+      localStorage.removeItem(ACCESS_TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
       // Only redirect if we're not already on the login/register page
       if (
         !window.location.pathname.startsWith('/login') &&
@@ -49,5 +50,3 @@ api.interceptors.response.use(
     return Promise.reject(error);
   },
 );
-
-export default api;

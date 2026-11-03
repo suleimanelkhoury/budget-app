@@ -14,6 +14,7 @@ import {
   type ReactNode,
 } from 'react';
 import { authApi } from '../api';
+import { ACCESS_TOKEN_KEY, USER_KEY } from '../utils/storage';
 import type { User, UserCreate, UserLogin } from '../types';
 
 interface AuthContextValue {
@@ -21,8 +22,6 @@ interface AuthContextValue {
   user: User | null;
   /** Whether the user is authenticated. */
   isAuthenticated: boolean;
-  /** Whether the auth state is still loading (e.g. on initial mount). */
-  isLoading: boolean;
   /** Log in with email + password. */
   login: (data: UserLogin) => Promise<void>;
   /** Register a new account and automatically log in. */
@@ -35,19 +34,16 @@ export const AuthContext = createContext<AuthContextValue | undefined>(
   undefined,
 );
 
-const TOKEN_KEY = 'access_token';
-const USER_KEY = 'user';
-
 /** Read the stored user from localStorage (used for lazy initial state). */
 function getStoredUser(): User | null {
-  const token = localStorage.getItem(TOKEN_KEY);
+  const token = localStorage.getItem(ACCESS_TOKEN_KEY);
   const storedUser = localStorage.getItem(USER_KEY);
 
   if (token && storedUser) {
     try {
       return JSON.parse(storedUser) as User;
     } catch {
-      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(ACCESS_TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
     }
   }
@@ -57,12 +53,11 @@ function getStoredUser(): User | null {
 export function AuthProvider({ children }: { children: ReactNode }) {
   // Lazy initial state — reads from localStorage on first render, no effect needed
   const [user, setUser] = useState<User | null>(getStoredUser);
-  const [isLoading] = useState(false); // Synchronous init, no loading needed
 
   // ── Login ──────────────────────────────────
   const login = useCallback(async (data: UserLogin) => {
     const token = await authApi.login(data);
-    localStorage.setItem(TOKEN_KEY, token.access_token);
+    localStorage.setItem(ACCESS_TOKEN_KEY, token.access_token);
     localStorage.setItem(USER_KEY, JSON.stringify(token.user));
     setUser(token.user);
   }, []);
@@ -70,14 +65,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ── Register ───────────────────────────────
   const register = useCallback(async (data: UserCreate) => {
     const token = await authApi.register(data);
-    localStorage.setItem(TOKEN_KEY, token.access_token);
+    localStorage.setItem(ACCESS_TOKEN_KEY, token.access_token);
     localStorage.setItem(USER_KEY, JSON.stringify(token.user));
     setUser(token.user);
   }, []);
 
   // ── Logout ─────────────────────────────────
   const logout = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     setUser(null);
   }, []);
@@ -86,12 +81,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       isAuthenticated: user !== null,
-      isLoading,
       login,
       register,
       logout,
     }),
-    [user, isLoading, login, register, logout],
+    [user, login, register, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -47,26 +47,35 @@ def _is_salary_label(label: str) -> bool:
     }
 
 
+def _income_totals(budget: Budget) -> tuple[Decimal, Decimal, Decimal, Decimal]:
+    """Return (projected, actual, projected_salary, actual_salary) income totals."""
+    projected = sum((i.projected_amount for i in budget.incomes), Decimal("0"))
+    actual = sum((i.actual_amount for i in budget.incomes), Decimal("0"))
+    projected_gehalt = sum(
+        (i.projected_amount for i in budget.incomes if _is_salary_label(i.label)),
+        Decimal("0"),
+    )
+    actual_gehalt = sum(
+        (i.actual_amount for i in budget.incomes if _is_salary_label(i.label)),
+        Decimal("0"),
+    )
+    return projected, actual, projected_gehalt, actual_gehalt
+
+
 def calculate_budget_summary(budget: Budget, db: Session) -> BudgetSummary:
     """Calculate the grand totals for a budget.
 
     Returns projected/actual income, expenses, balances, and differences.
     """
     # ── Income totals ──────────────────────────
-    total_projected_income = sum(
-        (i.projected_amount for i in budget.incomes), Decimal("0")
-    )
-    total_actual_income = sum((i.actual_amount for i in budget.incomes), Decimal("0"))
+    (
+        total_projected_income,
+        total_actual_income,
+        total_projected_gehalt,
+        total_actual_gehalt,
+    ) = _income_totals(budget)
 
     # ── Income breakdown: Gehalt vs. Extra ─────
-    total_projected_gehalt = sum(
-        (i.projected_amount for i in budget.incomes if _is_salary_label(i.label)),
-        Decimal("0"),
-    )
-    total_actual_gehalt = sum(
-        (i.actual_amount for i in budget.incomes if _is_salary_label(i.label)),
-        Decimal("0"),
-    )
     total_projected_extra = total_projected_income - total_projected_gehalt
     total_actual_extra = total_actual_income - total_actual_gehalt
 

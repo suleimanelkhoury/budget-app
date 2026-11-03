@@ -2,7 +2,6 @@
 
 from app.schemas.auth import (
     Token,
-    TokenData,
     UserCreate,
     UserLogin,
     UserResponse,
@@ -37,16 +36,12 @@ from app.schemas.summary import (
     ChartDataPoint,
 )
 
-# Alias to match the spec naming (Section 5 lists "CategorySummary")
-CategorySummary = CategorySummaryResponse
-
 __all__ = [
     # Auth
     "UserCreate",
     "UserLogin",
     "UserResponse",
     "Token",
-    "TokenData",
     # Budget
     "BudgetCreate",
     "BudgetUpdate",
@@ -67,7 +62,6 @@ __all__ = [
     # Summary
     "BudgetSummary",
     "CategorySubtotal",
-    "CategorySummary",
     "CategorySummaryResponse",
     "ChartData",
     "ChartDataPoint",

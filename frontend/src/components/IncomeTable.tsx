@@ -7,6 +7,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { incomeApi } from '../api';
+import { invalidateBudgetData } from '../utils/queryKeys';
 import { DifferenceBadge } from './DifferenceBadge';
 import { EditableCell } from './EditableCell';
 import type { Income } from '../types';
@@ -32,16 +33,14 @@ export function IncomeTable({ budgetId, incomes }: IncomeTableProps) {
       };
     }) => incomeApi.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
-      queryClient.invalidateQueries({ queryKey: ['budget-summary', budgetId] });
+      invalidateBudgetData(queryClient, budgetId);
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: incomeApi.delete,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
-      queryClient.invalidateQueries({ queryKey: ['budget-summary', budgetId] });
+      invalidateBudgetData(queryClient, budgetId);
     },
   });
 

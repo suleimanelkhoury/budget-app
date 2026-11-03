@@ -11,33 +11,28 @@ import { useNavigate } from 'react-router-dom';
 import { budgetsApi } from '../api';
 import { BudgetCard } from '../components/BudgetCard';
 import { ExcelImportModal } from '../components/ExcelImportModal';
+import { Spinner } from '../components/Spinner';
+import { emptyBudgetDraft } from '../utils/budgetForm';
+import { queryKeys } from '../utils/queryKeys';
 
 export function DashboardPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showImportModal, setShowImportModal] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [newBudget, setNewBudget] = useState({
-    title: '',
-    month: new Date().getMonth() + 1,
-    year: new Date().getFullYear(),
-  });
+  const [newBudget, setNewBudget] = useState(emptyBudgetDraft);
 
   const { data: budgets, isLoading } = useQuery({
-    queryKey: ['budgets'],
+    queryKey: queryKeys.budgets,
     queryFn: budgetsApi.list,
   });
 
   const createMutation = useMutation({
     mutationFn: budgetsApi.create,
     onSuccess: (budget) => {
-      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.budgets });
       setShowCreateForm(false);
-      setNewBudget({
-        title: '',
-        month: new Date().getMonth() + 1,
-        year: new Date().getFullYear(),
-      });
+      setNewBudget(emptyBudgetDraft());
       navigate(`/budgets/${budget.id}`);
     },
   });
@@ -48,17 +43,13 @@ export function DashboardPage() {
   };
 
   const handleImportSuccess = (budgetId: number) => {
-    queryClient.invalidateQueries({ queryKey: ['budgets'] });
+    queryClient.invalidateQueries({ queryKey: queryKeys.budgets });
     setShowImportModal(false);
     navigate(`/budgets/${budgetId}`);
   };
 
   if (isLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-indigo-600 dark:border-gray-700 dark:border-t-indigo-400" />
-      </div>
-    );
+    return <Spinner />;
   }
 
   return (

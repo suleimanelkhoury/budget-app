@@ -2,7 +2,7 @@
  * Category API service — add, update, and delete categories.
  */
 
-import api from './client';
+import { api } from './client';
 import type { Category, CategoryCreate, CategoryUpdate } from '../types';
 
 export const categoriesApi = {

@@ -6,6 +6,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { expenseItemsApi } from '../api';
+import { invalidateBudgetData } from '../utils/queryKeys';
 import { DifferenceBadge } from './DifferenceBadge';
 import { EditableCell } from './EditableCell';
 import type { ExpenseItem } from '../types';
@@ -27,19 +28,14 @@ export function ExpenseItemRow({ item, budgetId }: ExpenseItemRowProps) {
       data: { label?: string; projected_cost?: string; actual_cost?: string };
     }) => expenseItemsApi.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
-      queryClient.invalidateQueries({ queryKey: ['budget-summary', budgetId] });
-      queryClient.invalidateQueries({
-        queryKey: ['budget-category-summary', budgetId],
-      });
+      invalidateBudgetData(queryClient, budgetId);
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: expenseItemsApi.delete,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
-      queryClient.invalidateQueries({ queryKey: ['budget-summary', budgetId] });
+      invalidateBudgetData(queryClient, budgetId);
     },
   });
 

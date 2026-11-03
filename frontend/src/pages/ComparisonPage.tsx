@@ -22,24 +22,24 @@ import {
 } from 'recharts';
 import { budgetsApi } from '../api';
 import { ChartContainer } from '../components/ChartContainer';
+import { Spinner } from '../components/Spinner';
 import { YearlyComparisonView } from '../components/YearlyComparisonView';
 import { formatCurrency, formatMonthYear } from '../utils/format';
+import { balanceColor } from '../utils/balance';
+import { CHART_TOOLTIP_STYLE, SERIES_COLORS } from '../utils/chartTheme';
+import { queryKeys } from '../utils/queryKeys';
 
 type Tab = 'monthly' | 'yearly';
 
 export function ComparisonPage() {
   const [tab, setTab] = useState<Tab>('monthly');
   const { data: comparison, isLoading } = useQuery({
-    queryKey: ['budget-comparison'],
+    queryKey: queryKeys.comparison,
     queryFn: budgetsApi.compare,
   });
 
   if (isLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-indigo-600 dark:border-gray-700 dark:border-t-indigo-400" />
-      </div>
-    );
+    return <Spinner />;
   }
 
   const entries = comparison?.budgets ?? [];
@@ -113,17 +113,14 @@ function MonthlyView({ entries }: { entries: ComparisonEntry[] }) {
             <YAxis fontSize={12} />
             <Tooltip
               formatter={(value) => formatCurrency(Number(value))}
-              contentStyle={{
-                borderRadius: '8px',
-                border: '1px solid #e5e7eb',
-              }}
+              contentStyle={CHART_TOOLTIP_STYLE}
             />
             <Legend />
             <Line
               type="monotone"
               dataKey="gehalt"
               name="Gehalt"
-              stroke="#10b981"
+              stroke={SERIES_COLORS.Gehalt}
               strokeWidth={2}
               dot={{ r: 4 }}
             />
@@ -131,7 +128,7 @@ function MonthlyView({ entries }: { entries: ComparisonEntry[] }) {
               type="monotone"
               dataKey="expenses"
               name="Expenses"
-              stroke="#ef4444"
+              stroke={SERIES_COLORS.Expenses}
               strokeWidth={2}
               dot={{ r: 4 }}
             />
@@ -148,17 +145,14 @@ function MonthlyView({ entries }: { entries: ComparisonEntry[] }) {
             <YAxis fontSize={12} />
             <Tooltip
               formatter={(value) => formatCurrency(Number(value))}
-              contentStyle={{
-                borderRadius: '8px',
-                border: '1px solid #e5e7eb',
-              }}
+              contentStyle={CHART_TOOLTIP_STYLE}
             />
             <Legend />
             <Line
               type="monotone"
               dataKey="balance"
               name="IST Balance"
-              stroke="#14b8a6"
+              stroke={SERIES_COLORS.Balance}
               strokeWidth={2}
               dot={{ r: 4 }}
             />
@@ -181,10 +175,6 @@ function MonthlyView({ entries }: { entries: ComparisonEntry[] }) {
           <tbody>
             {entries.map((e) => {
               const balance = parseFloat(e.actual_balance);
-              const balanceColor =
-                balance >= 0
-                  ? 'text-green-600 dark:text-green-400'
-                  : 'text-red-600 dark:text-red-400';
               return (
                 <tr
                   key={e.budget_id}
@@ -203,7 +193,7 @@ function MonthlyView({ entries }: { entries: ComparisonEntry[] }) {
                     {formatCurrency(e.total_actual_expenses)}
                   </td>
                   <td
-                    className={`px-5 py-3 text-right text-sm font-semibold ${balanceColor}`}
+                    className={`px-5 py-3 text-right text-sm font-semibold ${balanceColor(balance)}`}
                   >
                     {formatCurrency(e.actual_balance)}
                   </td>

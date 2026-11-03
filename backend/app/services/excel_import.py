@@ -288,47 +288,33 @@ def _parse_income_from_template(
     Income entry with projected_amount from SOLL and actual_amount from IST.
     """
     label_col, value_col, soll_start, ist_start = layout
-    incomes: list[Income] = []
     income_map: dict[str, Income] = {}
 
-    # Read SOLL income rows (soll_start and the next few rows)
-    for r in range(soll_start, min(soll_start + 5, (ws.max_row or 0) + 1)):  # type: ignore[attr-defined]
-        label = _clean_label(ws.cell(row=r, column=label_col).value)  # type: ignore[attr-defined]
-        if not label or _is_subtotal(label) or _is_skip_label(label):
-            continue
-        if not _is_income_label(label):
-            continue
-        projected = _to_decimal(ws.cell(row=r, column=value_col).value)  # type: ignore[attr-defined]
-        if label not in income_map:
-            income_map[label] = Income(
-                budget_id=budget_id,
-                label=label,
-                projected_amount=projected,
-                actual_amount=Decimal("0"),
-            )
-        else:
-            income_map[label].projected_amount = projected
+    def read_rows(start_row: int, *, amount_field: str) -> None:
+        """Read up to 5 income rows starting at start_row into income_map."""
+        for r in range(start_row, min(start_row + 5, (ws.max_row or 0) + 1)):  # type: ignore[attr-defined]
+            label = _clean_label(ws.cell(row=r, column=label_col).value)  # type: ignore[attr-defined]
+            if not label or _is_subtotal(label) or _is_skip_label(label):
+                continue
+            if not _is_income_label(label):
+                continue
+            amount = _to_decimal(ws.cell(row=r, column=value_col).value)  # type: ignore[attr-defined]
+            entry = income_map.get(label)
+            if entry is None:
+                entry = Income(
+                    budget_id=budget_id,
+                    label=label,
+                    projected_amount=Decimal("0"),
+                    actual_amount=Decimal("0"),
+                )
+                income_map[label] = entry
+            setattr(entry, amount_field, amount)
 
-    # Read IST income rows (ist_start and the next few rows)
-    for r in range(ist_start, min(ist_start + 5, (ws.max_row or 0) + 1)):  # type: ignore[attr-defined]
-        label = _clean_label(ws.cell(row=r, column=label_col).value)  # type: ignore[attr-defined]
-        if not label or _is_subtotal(label) or _is_skip_label(label):
-            continue
-        if not _is_income_label(label):
-            continue
-        actual = _to_decimal(ws.cell(row=r, column=value_col).value)  # type: ignore[attr-defined]
-        if label not in income_map:
-            income_map[label] = Income(
-                budget_id=budget_id,
-                label=label,
-                projected_amount=Decimal("0"),
-                actual_amount=actual,
-            )
-        else:
-            income_map[label].actual_amount = actual
+    # SOLL rows fill projected_amount; IST rows fill actual_amount
+    read_rows(soll_start, amount_field="projected_amount")
+    read_rows(ist_start, amount_field="actual_amount")
 
-    incomes = list(income_map.values())
-    return incomes
+    return list(income_map.values())
 
 
 def parse_excel_and_create_budget(
@@ -461,15 +447,13 @@ def parse_excel_and_create_budget(
             if not label:
                 continue
 
-            # Skip instruction text, headers, subtotals, sub-headers
-            if _is_skip_label(label):
-                continue
-            if _is_subtotal(label):
-                continue
-            if _is_sub_header(label):
-                continue
-            # Skip income labels (handled above)
-            if _is_income_label(label):
+            # Skip instruction text, headers, subtotals, sub-headers, income
+            if (
+                _is_skip_label(label)
+                or _is_subtotal(label)
+                or _is_sub_header(label)
+                or _is_income_label(label)
+            ):
                 continue
 
             # ── Category header ──────────────────

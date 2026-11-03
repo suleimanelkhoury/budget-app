@@ -2,7 +2,7 @@
  * Expense item API service — add, update, and delete expense items.
  */
 
-import api from './client';
+import { api } from './client';
 import type {
   ExpenseItem,
   ExpenseItemCreate,

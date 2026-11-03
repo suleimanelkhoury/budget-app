@@ -21,31 +21,22 @@ import {
 } from 'recharts';
 import { budgetsApi } from '../api';
 import { ChartContainer } from './ChartContainer';
+import { Spinner } from './Spinner';
 import { formatCurrency } from '../utils/format';
+import { CHART_TOOLTIP_STYLE, SERIES_COLORS } from '../utils/chartTheme';
+import { queryKeys } from '../utils/queryKeys';
 import type { YearlyComparisonEntry } from '../types';
-
-const STAT_COLORS = {
-  Gehalt: '#10b981',
-  Extra: '#f59e0b',
-  Expenses: '#ef4444',
-  Balance: '#14b8a6',
-  Invested: '#6366f1',
-};
 
 export function YearlyComparisonView() {
   const { data, isLoading } = useQuery({
-    queryKey: ['budget-comparison-yearly'],
+    queryKey: queryKeys.yearlyComparison,
     queryFn: budgetsApi.compareYearly,
   });
 
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
 
   if (isLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-indigo-600 dark:border-gray-700 dark:border-t-indigo-400" />
-      </div>
-    );
+    return <Spinner />;
   }
 
   const years = data?.years ?? [];
@@ -96,12 +87,12 @@ export function YearlyComparisonView() {
 
       {/* ── Summary stats ─────────────────────── */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
-        <StatCard label="Income" value={active.total_income} color={STAT_COLORS.Gehalt} />
-        <StatCard label="Gehalt" value={active.total_gehalt} color={STAT_COLORS.Gehalt} />
-        <StatCard label="Extra" value={active.total_extra} color={STAT_COLORS.Extra} />
-        <StatCard label="Expenses" value={active.total_expenses} color={STAT_COLORS.Expenses} />
-        <StatCard label="Balance" value={active.total_balance} color={STAT_COLORS.Balance} />
-        <StatCard label="Invested" value={active.invested} color={STAT_COLORS.Invested} />
+        <StatCard label="Income" value={active.total_income} color={SERIES_COLORS.Gehalt} />
+        <StatCard label="Gehalt" value={active.total_gehalt} color={SERIES_COLORS.Gehalt} />
+        <StatCard label="Extra" value={active.total_extra} color={SERIES_COLORS.Extra} />
+        <StatCard label="Expenses" value={active.total_expenses} color={SERIES_COLORS.Expenses} />
+        <StatCard label="Balance" value={active.total_balance} color={SERIES_COLORS.Balance} />
+        <StatCard label="Invested" value={active.invested} color={SERIES_COLORS.Invested} />
       </div>
 
       {/* ── Category bar chart ────────────────── */}
@@ -119,12 +110,9 @@ export function YearlyComparisonView() {
               <Tooltip
                 formatter={(value) => formatCurrency(Number(value))}
                 cursor={{ fill: 'rgba(99, 102, 241, 0.08)' }}
-                contentStyle={{
-                  borderRadius: '8px',
-                  border: '1px solid #e5e7eb',
-                }}
+                contentStyle={CHART_TOOLTIP_STYLE}
               />
-              <Bar dataKey="Spent" name="Spent" fill="#6366f1" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Spent" name="Spent" fill={SERIES_COLORS.Invested} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         )}

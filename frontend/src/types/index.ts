@@ -33,12 +33,6 @@ export interface BudgetCreate {
   year: number;
 }
 
-export interface BudgetUpdate {
-  title?: string;
-  month?: number;
-  year?: number;
-}
-
 export interface Budget {
   id: number;
   user_id: number;
@@ -130,21 +124,6 @@ export interface BudgetSummary {
   actual_balance: string;
   balance_difference: string;
   expense_difference: string;
-}
-
-export interface CategorySubtotal {
-  category_id: number;
-  category_name: string;
-  sort_order: number;
-  item_count: number;
-  projected_subtotal: string;
-  actual_subtotal: string;
-  difference: string;
-}
-
-export interface CategorySummary {
-  budget_id: number;
-  categories: CategorySubtotal[];
 }
 
 // ── Chart Data ───────────────────────────────
@@ -247,10 +226,6 @@ export interface BudgetTemplate {
 export interface BudgetTemplateCreate {
   name: string;
   categories: TemplateCategoryCreate[];
-}
-
-export interface BudgetTemplateUpdate {
-  name?: string;
 }
 
 export interface CreateBudgetFromTemplate {

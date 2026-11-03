@@ -10,6 +10,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { budgetsApi } from '../api';
 import { formatCurrency, formatMonthYear } from '../utils/format';
+import { balanceColor } from '../utils/balance';
+import { queryKeys } from '../utils/queryKeys';
+import { ConfirmDialog } from './ConfirmDialog';
 import type { Budget } from '../types';
 
 export function BudgetCard({ budget }: { budget: Budget }) {
@@ -19,7 +22,7 @@ export function BudgetCard({ budget }: { budget: Budget }) {
 
   // Fetch summary for quick stats
   const { data: summary } = useQuery({
-    queryKey: ['budget-summary', budget.id],
+    queryKey: queryKeys.budget.summary(budget.id),
     queryFn: () => budgetsApi.getSummary(budget.id),
   });
 
@@ -30,15 +33,11 @@ export function BudgetCard({ budget }: { budget: Budget }) {
       // inactivates its summary query. We don't removeQueries on the
       // summary query because this card actively observes it (removing
       // an observed query triggers a refetch → 404).
-      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.budgets });
     },
   });
 
   const balance = summary ? parseFloat(summary.actual_balance) : 0;
-  const balanceColor =
-    balance >= 0
-      ? 'text-green-600 dark:text-green-400'
-      : 'text-red-600 dark:text-red-400';
 
   return (
     <div
@@ -88,7 +87,7 @@ export function BudgetCard({ budget }: { budget: Budget }) {
         </div>
         <div>
           <p className="text-gray-500 dark:text-gray-500">Balance</p>
-          <p className={`font-semibold ${balanceColor}`}>
+          <p className={`font-semibold ${balanceColor(balance)}`}>
             {summary ? formatCurrency(summary.actual_balance) : '—'}
           </p>
         </div>
@@ -96,46 +95,27 @@ export function BudgetCard({ budget }: { budget: Budget }) {
 
       {/* ── Delete confirmation modal ─────────── */}
       {showDeleteConfirm && (
-        <div
-          onClick={(e) => e.stopPropagation()}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-        >
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-gray-800">
-            <h2 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
-              Delete Budget
-            </h2>
-            <p className="mb-1 text-sm text-gray-600 dark:text-gray-300">
-              Are you sure you want to delete{' '}
-              <span className="font-semibold">{budget.title}</span>?
-            </p>
-            <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">
-              This will permanently remove all categories, expense items, and
-              income entries. This action cannot be undone.
-            </p>
-            {deleteMutation.isError && (
-              <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950 dark:text-red-400">
-                Failed to delete budget. Please try again.
-              </p>
-            )}
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setShowDeleteConfirm(false)}
-                disabled={deleteMutation.isPending}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => deleteMutation.mutate()}
-                disabled={deleteMutation.isPending}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
-              >
-                {deleteMutation.isPending ? 'Deleting…' : 'Delete Budget'}
-              </button>
-            </div>
-          </div>
+        <div onClick={(e) => e.stopPropagation()}>
+          <ConfirmDialog
+            title="Delete Budget"
+            message={
+              <>
+                Are you sure you want to delete{' '}
+                <span className="font-semibold">{budget.title}</span>? This
+                will permanently remove all categories, expense items, and
+                income entries. This action cannot be undone.
+              </>
+            }
+            confirmLabel="Delete Budget"
+            isPending={deleteMutation.isPending}
+            errorMessage={
+              deleteMutation.isError
+                ? 'Failed to delete budget. Please try again.'
+                : null
+            }
+            onConfirm={() => deleteMutation.mutate()}
+            onCancel={() => setShowDeleteConfirm(false)}
+          />
         </div>
       )}
     </div>

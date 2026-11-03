@@ -12,6 +12,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { templatesApi } from '../api';
+import { Spinner } from '../components/Spinner';
+import { emptyBudgetDraft } from '../utils/budgetForm';
+import { queryKeys } from '../utils/queryKeys';
 import type { TemplateCategoryCreate } from '../types';
 
 interface CategoryDraft {
@@ -28,7 +31,7 @@ export function TemplatesPage() {
   const queryClient = useQueryClient();
 
   const { data: templates, isLoading } = useQuery({
-    queryKey: ['templates'],
+    queryKey: queryKeys.templates,
     queryFn: templatesApi.list,
   });
 
@@ -42,7 +45,7 @@ export function TemplatesPage() {
   const createMutation = useMutation({
     mutationFn: templatesApi.create,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['templates'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.templates });
       setShowCreateForm(false);
       setTemplateName('');
       setCategoryDrafts([emptyCategoryDraft()]);
@@ -52,17 +55,13 @@ export function TemplatesPage() {
   const deleteMutation = useMutation({
     mutationFn: templatesApi.delete,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['templates'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.templates });
     },
   });
 
   // ── Create budget from template ────────────
   const [applyTemplateId, setApplyTemplateId] = useState<number | null>(null);
-  const [newBudget, setNewBudget] = useState({
-    title: '',
-    month: new Date().getMonth() + 1,
-    year: new Date().getFullYear(),
-  });
+  const [newBudget, setNewBudget] = useState(emptyBudgetDraft);
 
   const createFromTemplateMutation = useMutation({
     mutationFn: ({
@@ -73,13 +72,9 @@ export function TemplatesPage() {
       data: { title: string; month: number; year: number };
     }) => templatesApi.createBudgetFromTemplate(id, data),
     onSuccess: (budget) => {
-      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.budgets });
       setApplyTemplateId(null);
-      setNewBudget({
-        title: '',
-        month: new Date().getMonth() + 1,
-        year: new Date().getFullYear(),
-      });
+      setNewBudget(emptyBudgetDraft());
       navigate(`/budgets/${budget.id}`);
     },
   });
@@ -117,11 +112,7 @@ export function TemplatesPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-indigo-600 dark:border-gray-700 dark:border-t-indigo-400" />
-      </div>
-    );
+    return <Spinner />;
   }
 
   return (
@@ -258,9 +249,8 @@ export function TemplatesPage() {
                       applyTemplateId === template.id ? null : template.id,
                     );
                     setNewBudget({
+                      ...emptyBudgetDraft(),
                       title: template.name,
-                      month: new Date().getMonth() + 1,
-                      year: new Date().getFullYear(),
                     });
                   }}
                   className="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700"

@@ -6,6 +6,7 @@
  */
 
 import { formatCurrency, formatDifference } from '../utils/format';
+import { balanceColor } from '../utils/balance';
 import type { BudgetSummary } from '../types';
 
 interface SummaryBarProps {
@@ -44,9 +45,7 @@ export function SummaryBar({ summary }: SummaryBarProps) {
           <p className="text-xs text-gray-500 dark:text-gray-500">
             GESAMTUNTERSCHIED
           </p>
-          <p
-            className={`text-sm font-semibold ${expenseDiff >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
-          >
+          <p className={`text-sm font-semibold ${balanceColor(expenseDiff)}`}>
             {formatDifference(summary.expense_difference)}
           </p>
         </div>
@@ -73,9 +72,7 @@ export function SummaryBar({ summary }: SummaryBarProps) {
           <p className="text-xs text-gray-500 dark:text-gray-500">
             UNTERSCHIED
           </p>
-          <p
-            className={`text-sm font-semibold ${balanceDiff >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
-          >
+          <p className={`text-sm font-semibold ${balanceColor(balanceDiff)}`}>
             {formatDifference(summary.balance_difference)}
           </p>
         </div>

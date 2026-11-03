@@ -11,7 +11,6 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
-from app.core.exceptions import NotFoundError
 from app.models.budget import Budget
 from app.models.category import Category
 from app.models.expense_item import ExpenseItem
@@ -24,20 +23,9 @@ from app.schemas.template import (
     BudgetTemplateUpdate,
     CreateBudgetFromTemplate,
 )
+from app.services.ownership import get_user_template
 
 router = APIRouter(prefix="/api/templates", tags=["templates"])
-
-
-def _get_user_template(db: Session, template_id: int, user: User) -> BudgetTemplate:
-    """Fetch a template by ID, ensuring it belongs to the given user."""
-    template = db.get(BudgetTemplate, template_id)
-    if template is None:
-        raise NotFoundError("Template", template_id)
-    if template.user_id != user.id:
-        from app.core.exceptions import ForbiddenError
-
-        raise ForbiddenError("Template")
-    return template
 
 
 @router.get(
@@ -106,7 +94,7 @@ def get_template(
     current_user: User = Depends(get_current_user),
 ) -> BudgetTemplate:
     """Get a single budget template with its categories and items."""
-    return _get_user_template(db, template_id, current_user)
+    return get_user_template(db, template_id, current_user)
 
 
 @router.put(
@@ -121,7 +109,7 @@ def update_template(
     current_user: User = Depends(get_current_user),
 ) -> BudgetTemplate:
     """Update a budget template's name."""
-    template = _get_user_template(db, template_id, current_user)
+    template = get_user_template(db, template_id, current_user)
 
     update_data = template_in.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -143,7 +131,7 @@ def delete_template(
     current_user: User = Depends(get_current_user),
 ) -> None:
     """Delete a budget template and all its categories and items."""
-    template = _get_user_template(db, template_id, current_user)
+    template = get_user_template(db, template_id, current_user)
     db.delete(template)
     db.commit()
 
@@ -165,7 +153,7 @@ def create_budget_from_template(
     Amounts (projected and actual) are zeroed out — the template only
     defines the structure, not the numbers.
     """
-    template = _get_user_template(db, template_id, current_user)
+    template = get_user_template(db, template_id, current_user)
 
     budget = Budget(
         user_id=current_user.id,

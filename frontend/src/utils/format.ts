@@ -29,22 +29,6 @@ export function formatCurrency(value: string | number): string {
 }
 
 /**
- * Format a number with German number formatting (no currency symbol).
- *
- * @example
- * formatNumber(1234.56)  // "1.234,56"
- */
-export function formatNumber(value: string | number): string {
-  const num = typeof value === 'string' ? parseFloat(value) : value;
-  if (isNaN(num)) return '0,00';
-
-  return new Intl.NumberFormat('de-DE', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(num);
-}
-
-/**
  * Format a month + year as a German date string.
  *
  * @example

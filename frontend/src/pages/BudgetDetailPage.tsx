@@ -10,8 +10,11 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { budgetsApi, categoriesApi, incomeApi } from '../api';
 import { CategorySection } from '../components/CategorySection';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { IncomeTable } from '../components/IncomeTable';
+import { Spinner } from '../components/Spinner';
 import { SummaryBar } from '../components/SummaryBar';
+import { invalidateBudgetData, queryKeys } from '../utils/queryKeys';
 import type { Category } from '../types';
 
 export function BudgetDetailPage() {
@@ -41,13 +44,13 @@ export function BudgetDetailPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const { data: budget, isLoading } = useQuery({
-    queryKey: ['budget', budgetId],
+    queryKey: queryKeys.budget.detail(budgetId),
     queryFn: () => budgetsApi.get(budgetId),
     enabled: !!budgetId,
   });
 
   const { data: summary } = useQuery({
-    queryKey: ['budget-summary', budgetId],
+    queryKey: queryKeys.budget.summary(budgetId),
     queryFn: () => budgetsApi.getSummary(budgetId),
     enabled: !!budgetId,
     refetchInterval: 5000, // Refresh summary every 5s to reflect edits
@@ -57,7 +60,7 @@ export function BudgetDetailPage() {
     mutationFn: (data: { name: string; sort_order: number }) =>
       categoriesApi.create(budgetId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
+      invalidateBudgetData(queryClient, budgetId);
       setShowAddCategory(false);
       setNewCategory({ name: '', sort_order: 0 });
     },
@@ -70,8 +73,7 @@ export function BudgetDetailPage() {
       actual_amount: string;
     }) => incomeApi.create(budgetId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
-      queryClient.invalidateQueries({ queryKey: ['budget-summary', budgetId] });
+      invalidateBudgetData(queryClient, budgetId);
       setShowAddIncome(false);
       setNewIncome({ label: '', projected_amount: '0', actual_amount: '0' });
     },
@@ -88,7 +90,7 @@ export function BudgetDetailPage() {
       );
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
+      invalidateBudgetData(queryClient, budgetId);
     },
   });
 
@@ -136,7 +138,7 @@ export function BudgetDetailPage() {
       data: { title: string; month: number; year: number; copy_actuals: boolean };
     }) => budgetsApi.clone(id, data),
     onSuccess: (newBudget) => {
-      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.budgets });
       setShowCloneForm(false);
       navigate(`/budgets/${newBudget.id}`);
     },
@@ -150,19 +152,15 @@ export function BudgetDetailPage() {
       // We intentionally do NOT call removeQueries here: these queries are
       // still observed by this component, and removing an observed query
       // triggers an immediate refetch against the just-deleted budget (404).
-      queryClient.cancelQueries({ queryKey: ['budget', budgetId] });
-      queryClient.cancelQueries({ queryKey: ['budget-summary', budgetId] });
-      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.cancelQueries({ queryKey: queryKeys.budget.detail(budgetId) });
+      queryClient.cancelQueries({ queryKey: queryKeys.budget.summary(budgetId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.budgets });
       navigate('/');
     },
   });
 
   if (isLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-indigo-600 dark:border-gray-700 dark:border-t-indigo-400" />
-      </div>
-    );
+    return <Spinner />;
   }
 
   if (!budget) {
@@ -348,44 +346,26 @@ export function BudgetDetailPage() {
 
       {/* ── Delete confirmation modal ──────────── */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-gray-800">
-            <h2 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
-              Delete Budget
-            </h2>
-            <p className="mb-1 text-sm text-gray-600 dark:text-gray-300">
+        <ConfirmDialog
+          title="Delete Budget"
+          message={
+            <>
               Are you sure you want to delete{' '}
-              <span className="font-semibold">{budget.title}</span>?
-            </p>
-            <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">
-              This will permanently remove all categories, expense items, and
-              income entries. This action cannot be undone.
-            </p>
-            {deleteMutation.isError && (
-              <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950 dark:text-red-400">
-                Failed to delete budget. Please try again.
-              </p>
-            )}
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setShowDeleteConfirm(false)}
-                disabled={deleteMutation.isPending}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => deleteMutation.mutate(budgetId)}
-                disabled={deleteMutation.isPending}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
-              >
-                {deleteMutation.isPending ? 'Deleting…' : 'Delete Budget'}
-              </button>
-            </div>
-          </div>
-        </div>
+              <span className="font-semibold">{budget.title}</span>? This will
+              permanently remove all categories, expense items, and income
+              entries. This action cannot be undone.
+            </>
+          }
+          confirmLabel="Delete Budget"
+          isPending={deleteMutation.isPending}
+          errorMessage={
+            deleteMutation.isError
+              ? 'Failed to delete budget. Please try again.'
+              : null
+          }
+          onConfirm={() => deleteMutation.mutate(budgetId)}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
       )}
 
       {/* ── Filter data based on search ────────── */}

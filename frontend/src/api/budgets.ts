@@ -1,8 +1,8 @@
 /**
- * Budget API service — CRUD, summary, category-summary, chart-data, and import.
+ * Budget API service — CRUD, summary, chart-data, comparison, and import.
  */
 
-import api from './client';
+import { api } from './client';
 import type {
   Budget,
   BudgetClone,
@@ -10,8 +10,6 @@ import type {
   BudgetCreate,
   BudgetDetail,
   BudgetSummary,
-  BudgetUpdate,
-  CategorySummary,
   ChartData,
   ExcelImportResponse,
   YearlyComparison,
@@ -36,12 +34,6 @@ export const budgetsApi = {
     return response.data;
   },
 
-  /** Update a budget's title, month, or year. */
-  update: async (id: number, data: BudgetUpdate): Promise<Budget> => {
-    const response = await api.put<Budget>(`/budgets/${id}`, data);
-    return response.data;
-  },
-
   /** Delete a budget and all related data. */
   delete: async (id: number): Promise<void> => {
     await api.delete(`/budgets/${id}`);
@@ -50,14 +42,6 @@ export const budgetsApi = {
   /** Get the grand totals (SOLL/IST/UNTERSCHIED) for a budget. */
   getSummary: async (id: number): Promise<BudgetSummary> => {
     const response = await api.get<BudgetSummary>(`/budgets/${id}/summary`);
-    return response.data;
-  },
-
-  /** Get per-category subtotals (Zwischensumme). */
-  getCategorySummary: async (id: number): Promise<CategorySummary> => {
-    const response = await api.get<CategorySummary>(
-      `/budgets/${id}/category-summary`,
-    );
     return response.data;
   },
 

@@ -12,6 +12,7 @@ from app.models.budget import Budget
 from app.models.category import Category
 from app.models.expense_item import ExpenseItem
 from app.models.income import Income
+from app.models.template import BudgetTemplate
 from app.models.user import User
 
 
@@ -64,3 +65,17 @@ def get_user_expense_item(db: Session, item_id: int, user: User) -> ExpenseItem:
     if budget is None or budget.user_id != user.id:
         raise ForbiddenError("Expense item")
     return item
+
+
+def get_user_template(db: Session, template_id: int, user: User) -> BudgetTemplate:
+    """Fetch a budget template by ID, ensuring it belongs to the given user.
+
+    Raises NotFoundError (404) if the template doesn't exist.
+    Raises ForbiddenError (403) if it belongs to another user.
+    """
+    template = db.get(BudgetTemplate, template_id)
+    if template is None:
+        raise NotFoundError("Template", template_id)
+    if template.user_id != user.id:
+        raise ForbiddenError("Template")
+    return template

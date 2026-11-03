@@ -8,6 +8,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { categoriesApi, expenseItemsApi } from '../api';
+import { invalidateBudgetData } from '../utils/queryKeys';
+import { balanceColor } from '../utils/balance';
 import { formatCurrency, formatDifference } from '../utils/format';
 import { ExpenseItemRow } from './ExpenseItemRow';
 import type { Category } from '../types';
@@ -44,8 +46,7 @@ export function CategorySection({ category, budgetId }: CategorySectionProps) {
       actual_cost: string;
     }) => expenseItemsApi.create(category.id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
-      queryClient.invalidateQueries({ queryKey: ['budget-summary', budgetId] });
+      invalidateBudgetData(queryClient, budgetId);
       setShowAddItem(false);
       setNewItem({ label: '', projected_cost: '0', actual_cost: '0' });
     },
@@ -54,8 +55,7 @@ export function CategorySection({ category, budgetId }: CategorySectionProps) {
   const deleteCategoryMutation = useMutation({
     mutationFn: () => categoriesApi.delete(category.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
-      queryClient.invalidateQueries({ queryKey: ['budget-summary', budgetId] });
+      invalidateBudgetData(queryClient, budgetId);
     },
   });
 
@@ -63,11 +63,6 @@ export function CategorySection({ category, budgetId }: CategorySectionProps) {
     e.preventDefault();
     addItemMutation.mutate(newItem);
   };
-
-  const diffColor =
-    difference >= 0
-      ? 'text-green-600 dark:text-green-400'
-      : 'text-red-600 dark:text-red-400';
 
   return (
     <div className="mb-4 rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
@@ -176,7 +171,7 @@ export function CategorySection({ category, budgetId }: CategorySectionProps) {
               <td className="px-5 py-2 text-right text-sm text-gray-900 dark:text-gray-100">
                 {formatCurrency(actualSubtotal)}
               </td>
-              <td className={`px-5 py-2 text-right text-sm ${diffColor}`}>
+              <td className={`px-5 py-2 text-right text-sm ${balanceColor(difference)}`}>
                 {formatDifference(difference)}
               </td>
               <td></td>

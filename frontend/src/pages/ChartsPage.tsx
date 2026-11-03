@@ -23,28 +23,20 @@ import {
 } from 'recharts';
 import { budgetsApi } from '../api';
 import { ChartContainer } from '../components/ChartContainer';
+import { Spinner } from '../components/Spinner';
 import { formatCurrency } from '../utils/format';
-
-const PIE_COLORS = [
-  '#6366f1',
-  '#10b981',
-  '#f59e0b',
-  '#ef4444',
-  '#8b5cf6',
-  '#ec4899',
-  '#14b8a6',
-  '#f97316',
-  '#3b82f6',
-  '#a855f7',
-  '#22c55e',
-  '#eab308',
-];
+import { queryKeys } from '../utils/queryKeys';
+import {
+  CHART_TOOLTIP_STYLE,
+  PIE_COLORS,
+  SERIES_COLORS,
+} from '../utils/chartTheme';
 
 export function ChartsPage() {
   const [selectedBudgetId, setSelectedBudgetId] = useState<number | null>(null);
 
   const { data: budgets } = useQuery({
-    queryKey: ['budgets'],
+    queryKey: queryKeys.budgets,
     queryFn: budgetsApi.list,
   });
 
@@ -54,7 +46,7 @@ export function ChartsPage() {
     selectedBudgetId ?? budgets?.[budgets.length - 1]?.id ?? null;
 
   const { data: chartData, isLoading } = useQuery({
-    queryKey: ['chart-data', budgetId],
+    queryKey: queryKeys.budget.chartData(budgetId!),
     queryFn: () => budgetsApi.getChartData(budgetId!),
     enabled: !!budgetId,
   });
@@ -100,11 +92,7 @@ export function ChartsPage() {
         </div>
       )}
 
-      {isLoading && (
-        <div className="flex h-64 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-indigo-600 dark:border-gray-700 dark:border-t-indigo-400" />
-        </div>
-      )}
+      {isLoading && <Spinner />}
 
       {chartData && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -122,22 +110,19 @@ export function ChartsPage() {
                 <YAxis fontSize={12} />
                 <Tooltip
                   formatter={(value) => formatCurrency(Number(value))}
-                  contentStyle={{
-                    borderRadius: '8px',
-                    border: '1px solid #e5e7eb',
-                  }}
+                  contentStyle={CHART_TOOLTIP_STYLE}
                 />
                 <Legend />
                 <Bar
                   dataKey="projected"
                   name="SOLL"
-                  fill="#6366f1"
+                  fill={SERIES_COLORS.Projected}
                   radius={[4, 4, 0, 0]}
                 />
                 <Bar
                   dataKey="actual"
                   name="IST"
-                  fill="#10b981"
+                  fill={SERIES_COLORS.Actual}
                   radius={[4, 4, 0, 0]}
                 />
               </BarChart>

@@ -45,33 +45,3 @@ def get_current_user(
         raise credentials_exception
 
     return user
-
-
-def get_current_user_optional(
-    token: str | None = Depends(
-        OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
-    ),
-    db: Session = Depends(get_db),
-) -> User | None:
-    """Like get_current_user but returns None instead of raising 401.
-
-    Useful for endpoints that behave differently for authenticated vs.
-    anonymous users.
-    """
-    if token is None:
-        return None
-
-    payload = decode_access_token(token)
-    if payload is None:
-        return None
-
-    user_id_str = payload.get("sub")
-    if user_id_str is None:
-        return None
-
-    try:
-        user_id = int(user_id_str)
-    except ValueError:
-        return None
-
-    return db.get(User, user_id)

@@ -2,7 +2,7 @@
  * Income API service — add, update, and delete income entries.
  */
 
-import api from './client';
+import { api } from './client';
 import type { Income, IncomeCreate, IncomeUpdate } from '../types';
 
 export const incomeApi = {

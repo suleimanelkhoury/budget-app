@@ -87,13 +87,22 @@ export function ExcelImportModal({
     try {
       const buf = await selected.arrayBuffer();
       const wb = XLSX.read(buf, { type: 'array' });
-      const ws = wb.Sheets[wb.SheetNames[0]];
+
+      // Prefer the "BUDGET" sheet over whichever sheet happens to be first.
+      // The personal template stores its data on "BUDGET" while a chart sheet
+      // may be "DIAGRAMME" — if that one is first, previewing it yields zeros.
+      const budgetSheet =
+        wb.SheetNames.find((name) =>
+          name.toUpperCase().includes('BUDGET'),
+        ) ?? wb.SheetNames[0];
+
+      const ws = wb.Sheets[budgetSheet];
       const rows = XLSX.utils.sheet_to_json<(string | number)[]>(ws, {
         header: 1,
         blankrows: false,
       });
 
-      const parsed = parseRows(rows, wb.SheetNames[0]);
+      const parsed = parseRows(rows, budgetSheet);
       setPreview(parsed);
     } catch {
       setError('Could not read the Excel file. Please check the format.');
@@ -291,6 +300,126 @@ export function ExcelImportModal({
 }
 
 // ── Client-side parser for preview ───────────
+//
+// Mirrors the backend parser (app/services/excel_import.py) so the preview
+// reflects what the server will actually import.
+
+// Known category names from the backend — used to detect category header rows.
+// Matching is case-insensitive. Item labels (e.g. "Lebensmittel") are NOT here.
+const KNOWN_CATEGORY_SET = new Set(
+  KNOWN_CATEGORIES.map((name) => name.toLowerCase()),
+);
+
+const SUBTOTAL_LABELS = new Set([
+  'zwischensumme',
+  'gesamt',
+  'gesamtkosten',
+  'total',
+  'summe',
+  'subtotal',
+  'balance',
+  'bilanz',
+  'ergebnis',
+  'überschuss',
+  'defizit',
+  'monatliches gsmt.einkommen',
+  'monatliches gesamt.einkommen',
+  'monatliches gesamteinkommen',
+]);
+
+const SUB_HEADER_LABELS = new Set([
+  'geschätzte kosten',
+  'tatsächl. kosten',
+  'tatsächliche kosten',
+  'unterschied',
+  'estimated cost',
+  'actual cost',
+  'difference',
+]);
+
+const SKIP_LABELS = new Set([
+  'label',
+  'bezeichnung',
+  'name',
+  'kategorie',
+  'item',
+  'soll',
+  'ist',
+  'beschreibung',
+  'posten',
+  'soll monatliches einkommen',
+  'ist monatliches einkommen',
+  'soll balance',
+  'ist balance',
+  'unterschied',
+  'soll gesamtkosten',
+  'ist gesamtkosten',
+  'gesamtunterschied',
+]);
+
+function toDecimal(value: unknown): number {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const cleaned = value
+      .trim()
+      .replace(/\./g, '')
+      .replace(/,/g, '.')
+      .replace(/€/g, '')
+      .replace(/EUR/gi, '')
+      .trim();
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : 0;
+  }
+  return 0;
+}
+
+function isCategoryHeader(
+  label: string,
+  budgetTitle: string,
+  row: (string | number)[] = [],
+  sollCol = -1,
+  istCol = -1,
+): boolean {
+  const lower = label.trim().toLowerCase();
+  if (KNOWN_CATEGORY_SET.has(lower)) return true;
+  // Uppercase labels with no numbers are category headers (WOHNEN, TRANSPORT…).
+  // (Mirrors the backend's `_row_has_numbers` check — a row with numeric
+  // SOLL/IST values is an expense item, not a category header.)
+  if (
+    label === label.toUpperCase() &&
+    label.length <= 40 &&
+    /[a-zA-ZäöüÄÖÜ]/.test(label) &&
+    label.toUpperCase() !== budgetTitle.toUpperCase() &&
+    !/BUDGET/i.test(label)
+  ) {
+    const hasNumbers =
+      (sollCol >= 0 && toDecimal(row[sollCol]) !== 0) ||
+      (istCol >= 0 && toDecimal(row[istCol]) !== 0);
+    if (!hasNumbers) return true;
+  }
+  return false;
+}
+
+function isSubtotal(label: string): boolean {
+  return SUBTOTAL_LABELS.has(label.trim().toLowerCase());
+}
+
+function isSubHeader(label: string): boolean {
+  return SUB_HEADER_LABELS.has(label.trim().toLowerCase());
+}
+
+function isSkipLabel(label: string): boolean {
+  const lower = label.trim().toLowerCase();
+  if (SKIP_LABELS.has(lower)) return true;
+  if (label.length > 60) return true;
+  if (label.includes('\n')) return true;
+  return false;
+}
+
+function isIncomeLabel(label: string): boolean {
+  return INCOME_LABELS.has(label.toLowerCase());
+}
+
 function parseRows(
   rows: (string | number)[][],
   sheetName: string,
@@ -299,61 +428,176 @@ function parseRows(
   const incomes: ParsedPreview['incomes'] = [];
   const categories: ParsedPreview['categories'] = [];
 
-  // Detect columns (default: 0=label, 1=SOLL, 2=IST)
-  let labelCol = 0;
-  let sollCol = 1;
-  let istCol = 2;
+  // Detect the budget title from the first rows (e.g. "OKTOBER 2025 BUDGET").
+  let budgetTitle = '';
+  for (let r = 0; r < Math.min(rows.length, 5); r++) {
+    for (let c = 0; c < Math.min(rows[r].length, 6); c++) {
+      const raw = rows[r][c];
+      if (typeof raw !== 'string') continue;
+      const val = raw.trim();
+      if (!val || isSkipLabel(val) || isCategoryHeader(val, '')) continue;
+      const hasBudgetWord = /BUDGET/i.test(val) && val.length < 60;
+      const hasYear = val
+        .split(/\s+/)
+        .some((w) => /^\d+$/.test(w) && Number(w) >= 1900 && Number(w) <= 2100);
+      if (hasBudgetWord || hasYear) {
+        budgetTitle = val;
+        break;
+      }
+    }
+    if (budgetTitle) break;
+  }
 
-  // Check first few rows for header keywords
-  for (let r = 0; r < Math.min(5, rows.length); r++) {
-    for (let c = 0; c < rows[r].length; c++) {
-      const val = String(rows[r][c] ?? '')
-        .toLowerCase()
-        .trim();
-      if (['soll', 'projected', 'geplant', 'budget'].includes(val)) sollCol = c;
-      else if (['ist', 'actual', 'tatsächlich', 'real'].includes(val))
-        istCol = c;
-      else if (
-        ['label', 'bezeichnung', 'name', 'kategorie', 'item'].includes(val)
-      )
-        labelCol = c;
+  // Detect column blocks: label/SOLL/IST triples, mirroring the backend.
+  //
+  // The personal template has two side-by-side blocks. Headers appear as a
+  // ("Geschätzte Kosten", "Tatsächl. Kosten") pair; the label column is one to
+  // the left of the SOLL column. E.g. rows like ["", "WOHNEN", "Geschätzte
+  // Kosten", "Tatsächl. Kosten", "Unterschied", "", "ENTERTAINMENT", ...].
+  type Block = [number, number, number];
+  const blocks: Block[] = [];
+  const scanLimit = Math.min(rows.length, 15);
+  for (let r = 0; r < scanLimit; r++) {
+    for (let c = 0; c < (rows[r]?.length ?? 0); c++) {
+      const val = String(rows[r]?.[c] ?? '').trim().toLowerCase();
+      if (
+        ['geschätzte kosten', 'estimated cost', 'soll', 'projected'].includes(
+          val,
+        )
+      ) {
+        const nextVal = String(rows[r]?.[c + 1] ?? '')
+          .trim()
+          .toLowerCase();
+        if (
+          [
+            'tatsächl. kosten',
+            'tatsächliche kosten',
+            'ist',
+            'actual',
+          ].includes(nextVal)
+        ) {
+          const labelCol = c - 1;
+          if (labelCol >= 0) {
+            const existing = blocks.some(
+              (b) => b[0] === labelCol && b[1] === c && b[2] === c + 1,
+            );
+            if (!existing) blocks.push([labelCol, c, c + 1]);
+          }
+        }
+      }
+    }
+  }
+  if (blocks.length === 0) blocks.push([0, 1, 2]);
+
+  // Detect the income layout: label in one column, value a few columns right,
+  // split into a SOLL block followed by an IST block. (Template: label col C,
+  // value col E, SOLL rows around 4-5 and IST rows around 8-9.)
+  interface IncomeLayout {
+    labelCol: number;
+    valueCol: number;
+    sollStart: number;
+    istStart: number;
+  }
+  let incomeLayout: IncomeLayout | null = null;
+  const valueCols = new Set(blocks.flatMap((b) => [b[1], b[2]]));
+  for (let r = 0; r < Math.min(rows.length, 20); r++) {
+    for (let c = 0; c < Math.min(rows[r]?.length ?? 0, 6); c++) {
+      const val = String(rows[r]?.[c] ?? '').trim().toLowerCase();
+      if (val !== 'einkommen') continue;
+      for (let vc = c + 2; vc < Math.min(c + 5, rows[r]?.length ?? 0); vc++) {
+        const cellVal = rows[r]?.[vc];
+        if (typeof cellVal === 'number' && cellVal !== 0) {
+          // Find a second "Einkommen" label below in the same column = IST block.
+          for (let r2 = r + 1; r2 < Math.min(rows.length, r + 11); r2++) {
+            const val2 = String(rows[r2]?.[c] ?? '').trim().toLowerCase();
+            if (val2 === 'einkommen') {
+              incomeLayout = { labelCol: c, valueCol: vc, sollStart: r, istStart: r2 };
+              break;
+            }
+          }
+          if (incomeLayout) break;
+        }
+      }
+      if (incomeLayout) break;
+    }
+    if (incomeLayout) break;
+  }
+
+  // ── Parse income ───────────────────────────
+  if (incomeLayout && !valueCols.has(incomeLayout.valueCol)) {
+    // Template-style layout with a distinct income value column (label col C,
+    // values in col E, SOLL and IST blocks both read from the same value col).
+    const { labelCol, valueCol, sollStart, istStart } = incomeLayout;
+    const addIncome = (r: number, isSoll: boolean) => {
+      const label = String(rows[r]?.[labelCol] ?? '').trim();
+      if (!label || isSubtotal(label) || isSkipLabel(label)) return;
+      if (!isIncomeLabel(label)) return;
+      const amount = String(toDecimal(rows[r]?.[valueCol] ?? '0'));
+      let entry = incomes.find((i) => i.label === label);
+      if (!entry) {
+        entry = { label, projected: '0', actual: '0' };
+        incomes.push(entry);
+      }
+      if (isSoll) entry.projected = amount;
+      else entry.actual = amount;
+    };
+    for (let r = sollStart; r < Math.min(sollStart + 5, rows.length); r++)
+      addIncome(r, true);
+    for (let r = istStart; r < Math.min(istStart + 5, rows.length); r++)
+      addIncome(r, false);
+  } else {
+    // Fallback: income label/value in the first block's column positions
+    // (label in labelCol, SOLL/IST in the block's soll/ist columns).
+    incomeLayout = null;
+    const labelCol = blocks[0][0];
+    const sollCol = blocks[0][1];
+    const istCol = blocks[0][2];
+    for (const row of rows) {
+      const label = String(row[labelCol] ?? '').trim();
+      if (!label || isSkipLabel(label) || isSubtotal(label)) continue;
+      if (!isIncomeLabel(label)) continue;
+      if (!incomes.some((i) => i.label === label)) {
+        incomes.push({
+          label,
+          projected: String(toDecimal(row[sollCol] ?? '0')),
+          actual: String(toDecimal(row[istCol] ?? '0')),
+        });
+      }
     }
   }
 
-  let currentCat: ParsedPreview['categories'][number] | null = null;
+  // ── Parse categories and items ─────────────
+  for (const [labelCol, sollCol, istCol] of blocks) {
+    let currentCat: ParsedPreview['categories'][number] | null = null;
+    for (const row of rows) {
+      const label = String(row[labelCol] ?? '').trim();
+      if (!label) continue;
+      if (isSkipLabel(label)) continue;
+      if (isSubtotal(label)) continue;
+      if (isSubHeader(label)) continue;
+      if (isIncomeLabel(label)) continue;
 
-  for (const row of rows) {
-    const label = String(row[labelCol] ?? '').trim();
-    if (!label) continue;
+      // Category header?
+      if (isCategoryHeader(label, budgetTitle, row, sollCol, istCol)) {
+        let existing = categories.find(
+          (cat) => cat.name.toLowerCase() === label.toLowerCase(),
+        );
+        if (!existing) {
+          existing = { name: label, items: [] };
+          categories.push(existing);
+        }
+        currentCat = existing;
+        continue;
+      }
 
-    // Skip header rows
-    if (
-      ['soll', 'ist', 'label', 'bezeichnung', 'name'].includes(
-        label.toLowerCase(),
-      )
-    )
-      continue;
-
-    const projected = String(row[sollCol] ?? '0');
-    const actual = String(row[istCol] ?? '0');
-
-    // Income row?
-    if (INCOME_LABELS.has(label)) {
-      incomes.push({ label, projected, actual });
-      currentCat = null;
-      continue;
-    }
-
-    // Category header?
-    if (KNOWN_CATEGORIES.includes(label)) {
-      currentCat = { name: label, items: [] };
-      categories.push(currentCat);
-      continue;
-    }
-
-    // Expense item?
-    if (currentCat) {
-      currentCat.items.push({ label, projected, actual });
+      // Expense item under the current category.
+      if (currentCat) {
+        const projected = toDecimal(row[sollCol] ?? '0');
+        const actual = toDecimal(row[istCol] ?? '0');
+        if (projected !== 0 || actual !== 0) {
+          currentCat.items.push({ label, projected: String(projected), actual: String(actual) });
+        }
+      }
     }
   }
 

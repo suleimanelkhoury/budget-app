@@ -60,10 +60,9 @@ export function ComparisonPage() {
   // Shape data for Recharts: one row per budget, labeled "Mon YYYY"
   const chartData = entries.map((e) => ({
     label: formatMonthYear(e.month, e.year),
-    income: parseFloat(e.total_actual_income),
+    gehalt: parseFloat(e.total_actual_gehalt),
     expenses: parseFloat(e.total_actual_expenses),
     balance: parseFloat(e.actual_balance),
-    projectedBalance: parseFloat(e.projected_balance),
   }));
 
   return (
@@ -73,8 +72,8 @@ export function ComparisonPage() {
       </h1>
 
       <div className="grid grid-cols-1 gap-6">
-        {/* ── Income vs Expenses over time ─────── */}
-        <ChartContainer title="Income vs Expenses (IST)">
+        {/* ── Gehalt vs Expenses over time ─────── */}
+        <ChartContainer title="Gehalt vs Expenses (IST)">
           <ResponsiveContainer width="100%" height={350}>
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -90,8 +89,8 @@ export function ComparisonPage() {
               <Legend />
               <Line
                 type="monotone"
-                dataKey="income"
-                name="Income"
+                dataKey="gehalt"
+                name="Gehalt"
                 stroke="#10b981"
                 strokeWidth={2}
                 dot={{ r: 4 }}
@@ -109,7 +108,7 @@ export function ComparisonPage() {
         </ChartContainer>
 
         {/* ── Balance over time ────────────────── */}
-        <ChartContainer title="Balance Over Time (SOLL vs IST)">
+        <ChartContainer title="Balance Over Time (IST)">
           <ResponsiveContainer width="100%" height={350}>
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -125,15 +124,6 @@ export function ComparisonPage() {
               <Legend />
               <Line
                 type="monotone"
-                dataKey="projectedBalance"
-                name="SOLL Balance"
-                stroke="#6366f1"
-                strokeWidth={2}
-                strokeDasharray="5 5"
-                dot={{ r: 4 }}
-              />
-              <Line
-                type="monotone"
                 dataKey="balance"
                 name="IST Balance"
                 stroke="#14b8a6"
@@ -146,16 +136,14 @@ export function ComparisonPage() {
 
         {/* ── Per-month table ──────────────────── */}
         <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-          <table className="w-full min-w-[700px]">
+          <table className="w-full min-w-[600px]">
             <thead>
               <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:border-gray-700 dark:text-gray-500">
                 <th className="px-5 py-3">Month</th>
-                <th className="px-5 py-3 text-right">SOLL Income</th>
-                <th className="px-5 py-3 text-right">IST Income</th>
-                <th className="px-5 py-3 text-right">SOLL Expenses</th>
-                <th className="px-5 py-3 text-right">IST Expenses</th>
-                <th className="px-5 py-3 text-right">SOLL Balance</th>
-                <th className="px-5 py-3 text-right">IST Balance</th>
+                <th className="px-5 py-3 text-right">Gehalt</th>
+                <th className="px-5 py-3 text-right">Extra</th>
+                <th className="px-5 py-3 text-right">Expenses</th>
+                <th className="px-5 py-3 text-right">Balance</th>
               </tr>
             </thead>
             <tbody>
@@ -174,19 +162,13 @@ export function ComparisonPage() {
                       {formatMonthYear(e.month, e.year)}
                     </td>
                     <td className="px-5 py-3 text-right text-sm text-gray-700 dark:text-gray-300">
-                      {formatCurrency(e.total_projected_income)}
+                      {formatCurrency(e.total_actual_gehalt)}
                     </td>
                     <td className="px-5 py-3 text-right text-sm text-gray-700 dark:text-gray-300">
-                      {formatCurrency(e.total_actual_income)}
-                    </td>
-                    <td className="px-5 py-3 text-right text-sm text-gray-700 dark:text-gray-300">
-                      {formatCurrency(e.total_projected_expenses)}
+                      {formatCurrency(e.total_actual_extra)}
                     </td>
                     <td className="px-5 py-3 text-right text-sm text-gray-700 dark:text-gray-300">
                       {formatCurrency(e.total_actual_expenses)}
-                    </td>
-                    <td className="px-5 py-3 text-right text-sm text-gray-700 dark:text-gray-300">
-                      {formatCurrency(e.projected_balance)}
                     </td>
                     <td
                       className={`px-5 py-3 text-right text-sm font-semibold ${balanceColor}`}

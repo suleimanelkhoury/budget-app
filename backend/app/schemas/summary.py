@@ -84,6 +84,10 @@ class BudgetComparisonEntry(BaseModel):
     year: int
     total_projected_income: Decimal
     total_actual_income: Decimal
+    total_projected_gehalt: Decimal
+    total_actual_gehalt: Decimal
+    total_projected_extra: Decimal
+    total_actual_extra: Decimal
     total_projected_expenses: Decimal
     total_actual_expenses: Decimal
     projected_balance: Decimal

@@ -6,11 +6,15 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class ExpenseItemBase(BaseModel):
-    """Shared fields for expense items."""
+    """Shared fields for expense items.
+
+    Costs may be negative (e.g. refunds, rebates, adjustments), so no lower
+    bound is enforced.
+    """
 
     label: str = Field(..., min_length=1, max_length=100)
-    projected_cost: Decimal = Field(default=Decimal("0"), ge=0)
-    actual_cost: Decimal = Field(default=Decimal("0"), ge=0)
+    projected_cost: Decimal = Field(default=Decimal("0"))
+    actual_cost: Decimal = Field(default=Decimal("0"))
 
 
 class ExpenseItemCreate(ExpenseItemBase):
@@ -23,8 +27,8 @@ class ExpenseItemUpdate(BaseModel):
     """Request body for updating an expense item — all fields optional."""
 
     label: str | None = Field(None, min_length=1, max_length=100)
-    projected_cost: Decimal | None = Field(None, ge=0)
-    actual_cost: Decimal | None = Field(None, ge=0)
+    projected_cost: Decimal | None = Field(None)
+    actual_cost: Decimal | None = Field(None)
 
 
 class ExpenseItemResponse(ExpenseItemBase):

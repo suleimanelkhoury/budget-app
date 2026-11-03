@@ -32,8 +32,12 @@ def list_budgets(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[Budget]:
-    """List all budgets belonging to the logged-in user."""
-    stmt = select(Budget).where(Budget.user_id == current_user.id)
+    """List all budgets belonging to the logged-in user, sorted by date."""
+    stmt = (
+        select(Budget)
+        .where(Budget.user_id == current_user.id)
+        .order_by(Budget.year.asc(), Budget.month.asc(), Budget.id.asc())
+    )
     return list(db.scalars(stmt))
 
 

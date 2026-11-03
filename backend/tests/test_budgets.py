@@ -79,8 +79,58 @@ class TestBudgetList:
         assert len(budgets) == 1
         assert budgets[0]["title"] == "User 1 Budget"
 
+    def test_list_budgets_sorted_by_date(self, client, auth_headers):
+        """Budgets are sorted by year asc, then month asc, regardless of
+        creation/insertion order."""
+        for title, month, year in [
+            ("Oktober 2026", 10, 2026),
+            ("Mai 2026", 5, 2026),
+            ("Dezember 2025", 12, 2025),
+            ("Januar 2026", 1, 2026),
+            ("Oktober 2025", 10, 2025),
+        ]:
+            res = client.post(
+                "/api/budgets/",
+                json={"title": title, "month": month, "year": year},
+                headers=auth_headers,
+            )
+            assert res.status_code == 201
+
+        response = client.get("/api/budgets/", headers=auth_headers)
+        assert response.status_code == 200
+        titles = [b["title"] for b in response.json()]
+        assert titles == [
+            "Oktober 2025",
+            "Dezember 2025",
+            "Januar 2026",
+            "Mai 2026",
+            "Oktober 2026",
+        ]
+
+    def test_list_budgets_sorted_when_added_late(self, client, auth_headers):
+        """A budget added last does not appear after newer budgets."""
+        client.post(
+            "/api/budgets/",
+            json={"title": "Oktober 2025", "month": 10, "year": 2025},
+            headers=auth_headers,
+        )
+        client.post(
+            "/api/budgets/",
+            json={"title": "Oktober 2026", "month": 10, "year": 2026},
+            headers=auth_headers,
+        )
+        # Add the missing budget last — it must sort chronologically
+        client.post(
+            "/api/budgets/",
+            json={"title": "Dezember 2025", "month": 12, "year": 2025},
+            headers=auth_headers,
+        )
+
+        response = client.get("/api/budgets/", headers=auth_headers)
+        titles = [b["title"] for b in response.json()]
+        assert titles == ["Oktober 2025", "Dezember 2025", "Oktober 2026"]
+
     def test_list_budgets_unauthorized(self, client):
-        """Listing budgets without auth returns 401."""
         response = client.get("/api/budgets/")
         assert response.status_code == 401
 

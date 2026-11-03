@@ -20,9 +20,9 @@ from app.schemas.budget import (
     BudgetResponse,
     BudgetUpdate,
 )
-from app.schemas.summary import BudgetComparison
+from app.schemas.summary import BudgetComparison, YearlyComparison
 from app.services.ownership import get_user_budget
-from app.services.summary import compare_user_budgets
+from app.services.summary import compare_user_budgets, compare_user_by_year
 
 router = APIRouter(prefix="/api/budgets", tags=["budgets"])
 
@@ -56,6 +56,23 @@ def compare_budgets(
     balance trends over time. Budgets are sorted chronologically.
     """
     return compare_user_budgets(current_user, db)
+
+
+@router.get(
+    "/compare-yearly",
+    response_model=YearlyComparison,
+    summary="Compare all budgets aggregated by year",
+)
+def compare_budgets_yearly(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> YearlyComparison:
+    """Return yearly aggregates for every budget belonging to the user.
+
+    Aggregates income (Gehalt/Extra), expenses, balance, the amount invested,
+    and per-category actual spending for each calendar year.
+    """
+    return compare_user_by_year(current_user, db)
 
 
 @router.post(

@@ -183,6 +183,27 @@ export interface BudgetComparison {
   budgets: BudgetComparisonEntry[];
 }
 
+// ── Yearly Comparison ───────────────────────
+export interface YearlyCategoryTotal {
+  name: string;
+  total: string;
+}
+
+export interface YearlyComparisonEntry {
+  year: number;
+  total_income: string;
+  total_gehalt: string;
+  total_extra: string;
+  total_expenses: string;
+  total_balance: string;
+  invested: string;
+  categories: YearlyCategoryTotal[];
+}
+
+export interface YearlyComparison {
+  years: YearlyComparisonEntry[];
+}
+
 // ── Budget Clone (recurring templates) ───────
 export interface BudgetClone {
   title: string;

@@ -14,6 +14,7 @@ import type {
   CategorySummary,
   ChartData,
   ExcelImportResponse,
+  YearlyComparison,
 } from '../types';
 
 export const budgetsApi = {
@@ -69,6 +70,12 @@ export const budgetsApi = {
   /** Compare all budgets across months (multi-month comparison). */
   compare: async (): Promise<BudgetComparison> => {
     const response = await api.get<BudgetComparison>('/budgets/compare');
+    return response.data;
+  },
+
+  /** Compare all budgets aggregated by year (yearly comparison). */
+  compareYearly: async (): Promise<YearlyComparison> => {
+    const response = await api.get<YearlyComparison>('/budgets/compare-yearly');
     return response.data;
   },
 

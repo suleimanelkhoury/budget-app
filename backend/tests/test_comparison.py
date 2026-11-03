@@ -75,3 +75,88 @@ class TestBudgetCompare:
         """Comparing budgets without auth returns 401."""
         response = client.get("/api/budgets/compare")
         assert response.status_code == 401
+
+
+class TestBudgetCompareYearly:
+    """Tests for GET /api/budgets/compare-yearly."""
+
+    def test_compare_yearly_empty(self, client, auth_headers):
+        """A user with no budgets gets an empty yearly comparison."""
+        response = client.get("/api/budgets/compare-yearly", headers=auth_headers)
+        assert response.status_code == 200
+        assert response.json() == {"years": []}
+
+    def test_compare_yearly_unauthorized(self, client):
+        """Yearly comparison without auth returns 401."""
+        response = client.get("/api/budgets/compare-yearly")
+        assert response.status_code == 401
+
+    def test_compare_yearly_aggregates_categories(
+        self, client, auth_headers, budget_with_data
+    ):
+        """Expenses are aggregated per year, including the invested amount."""
+        bid = budget_with_data["budget_id"]
+
+        # Add an Investitionen category with an actual amount
+        r = client.post(
+            f"/api/budgets/{bid}/categories",
+            json={"name": "Investitionen", "sort_order": 1},
+            headers=auth_headers,
+        )
+        cat_id = r.json()["id"]
+        client.post(
+            f"/api/categories/{cat_id}/items",
+            json={"label": "MSCI World", "projected_cost": "500", "actual_cost": "400"},
+            headers=auth_headers,
+        )
+
+        response = client.get("/api/budgets/compare-yearly", headers=auth_headers)
+        assert response.status_code == 200
+        years = response.json()["years"]
+        assert len(years) == 1
+        entry = years[0]
+        # Income: Einkommen actual 2500 (salary)
+        assert Decimal(entry["total_income"]) == Decimal("2500.00")
+        assert Decimal(entry["total_gehalt"]) == Decimal("2500.00")
+        assert Decimal(entry["total_extra"]) == Decimal("0.00")
+        # Expenses: Miete 850 + MSCI World 400
+        assert Decimal(entry["total_expenses"]) == Decimal("1250.00")
+        assert Decimal(entry["invested"]) == Decimal("400.00")
+        assert Decimal(entry["total_balance"]) == Decimal("1250.00")  # 2500 - 1250
+
+        # Categories include both Wohnen (Miete) and Investitionen
+        cat_names = {c["name"]: Decimal(c["total"]) for c in entry["categories"]}
+        assert cat_names["Wohnen"] == Decimal("850.00")
+        assert cat_names["Investitionen"] == Decimal("400.00")
+
+    def test_compare_yearly_groups_by_year(
+        self, client, auth_headers, budget_with_data
+    ):
+        """Budgets from different years are grouped into separate entries."""
+        # budget_with_data is July 2026 with income 2500 and expense 850
+        # Create a budget in 2025 with the same data
+        client.post(
+            "/api/budgets/",
+            json={"title": "Juli 2025", "month": 7, "year": 2025},
+            headers=auth_headers,
+        )
+        r = client.post(
+            "/api/budgets/",
+            json={"title": "Dezember 2025", "month": 12, "year": 2025},
+            headers=auth_headers,
+        )
+        bid2025 = r.json()["id"]
+        client.post(
+            f"/api/budgets/{bid2025}/income",
+            json={"label": "Extra", "projected_amount": "100", "actual_amount": "50"},
+            headers=auth_headers,
+        )
+
+        response = client.get("/api/budgets/compare-yearly", headers=auth_headers)
+        years = response.json()["years"]
+        assert [y["year"] for y in years] == [2025, 2026]
+        # 2025: only Extra income (50), no expenses
+        y2025 = next(y for y in years if y["year"] == 2025)
+        assert Decimal(y2025["total_income"]) == Decimal("50.00")
+        assert Decimal(y2025["total_extra"]) == Decimal("50.00")
+        assert Decimal(y2025["total_gehalt"]) == Decimal("0.00")

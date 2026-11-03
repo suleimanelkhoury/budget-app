@@ -12,7 +12,19 @@ from app.schemas.summary import (
     BudgetSummary,
     CategorySubtotal,
     CategorySummaryResponse,
+    YearlyCategoryTotal,
+    YearlyComparison,
+    YearlyComparisonEntry,
 )
+
+
+def _is_investment_category(name: str) -> bool:
+    """Return True if a category represents investments (Investitionen).
+
+    The imported template's "Investitionen" category holds the amounts the
+    user put into their portfolio (MSCI World, MSCI Emerging Market, BYD, …).
+    """
+    return name.strip().lower() in {"investitionen", "investments"}
 
 
 def _is_salary_label(label: str) -> bool:
@@ -151,3 +163,78 @@ def compare_user_budgets(user: User, db: Session) -> BudgetComparison:
     # flip it to ascending for chronological comparison charts.
     entries.sort(key=lambda e: (e.year, e.month))
     return BudgetComparison(budgets=entries)
+
+
+def compare_user_by_year(user: User, db: Session) -> YearlyComparison:
+    """Aggregate a user's budgets by calendar year.
+
+    For each year, returns total income (split into salary/carryover),
+    expenses, balance, the amount invested (Investitionen category), and a
+    per-category breakdown of actual (IST) spending.
+    """
+    # year -> dict of accumulators
+    by_year: dict[int, dict] = {}
+
+    for budget in user.budgets:
+        acc = by_year.setdefault(
+            budget.year,
+            {
+                "income": Decimal("0"),
+                "gehalt": Decimal("0"),
+                "extra": Decimal("0"),
+                "expenses": Decimal("0"),
+                "balance": Decimal("0"),
+                "invested": Decimal("0"),
+                "categories": {},  # name.lower() -> [display_name, Decimal]
+            },
+        )
+
+        income = sum((i.actual_amount for i in budget.incomes), Decimal("0"))
+        gehalt = sum(
+            (i.actual_amount for i in budget.incomes if _is_salary_label(i.label)),
+            Decimal("0"),
+        )
+        acc["income"] += income
+        acc["gehalt"] += gehalt
+        acc["extra"] += income - gehalt
+
+        expenses = Decimal("0")
+        for category in budget.categories:
+            cat_total = sum(
+                (item.actual_cost for item in category.items), Decimal("0")
+            )
+            expenses += cat_total
+            if _is_investment_category(category.name):
+                acc["invested"] += cat_total
+            key = category.name.lower()
+            entry = acc["categories"].get(key)
+            if entry is None:
+                acc["categories"][key] = [category.name, cat_total]
+            else:
+                entry[1] += cat_total
+
+        acc["expenses"] += expenses
+        acc["balance"] += income - expenses
+
+    years: list[YearlyComparisonEntry] = []
+    for y, acc in sorted(by_year.items(), key=lambda kv: kv[0]):
+        categories = [
+            YearlyCategoryTotal(name=name, total=total)
+            for name, total in sorted(
+                acc["categories"].values(), key=lambda e: e[1], reverse=True
+            )
+        ]
+        years.append(
+            YearlyComparisonEntry(
+                year=y,
+                total_income=acc["income"],
+                total_gehalt=acc["gehalt"],
+                total_extra=acc["extra"],
+                total_expenses=acc["expenses"],
+                total_balance=acc["balance"],
+                invested=acc["invested"],
+                categories=categories,
+            )
+        )
+
+    return YearlyComparison(years=years)

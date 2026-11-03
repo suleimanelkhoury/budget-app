@@ -98,3 +98,29 @@ class BudgetComparison(BaseModel):
     """Multi-month comparison of budgets belonging to a user."""
 
     budgets: list[BudgetComparisonEntry]
+
+
+class YearlyCategoryTotal(BaseModel):
+    """Aggregated total for a single category across one year."""
+
+    name: str
+    total: Decimal  # actual (IST) total spent in that category during the year
+
+
+class YearlyComparisonEntry(BaseModel):
+    """Aggregated totals for a single year across all of a user's budgets."""
+
+    year: int
+    total_income: Decimal  # actual income (IST)
+    total_gehalt: Decimal  # actual salary (IST)
+    total_extra: Decimal  # actual extra income (IST)
+    total_expenses: Decimal  # actual expenses (IST)
+    total_balance: Decimal  # actual balance (IST)
+    invested: Decimal  # actual amount invested (Investitionen category)
+    categories: list[YearlyCategoryTotal]
+
+
+class YearlyComparison(BaseModel):
+    """Comparison of a user's budgets aggregated by year."""
+
+    years: list[YearlyComparisonEntry]

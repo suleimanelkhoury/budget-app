@@ -48,8 +48,10 @@ export function ChartsPage() {
     queryFn: budgetsApi.list,
   });
 
-  // Auto-select the first budget
-  const budgetId = selectedBudgetId ?? budgets?.[0]?.id ?? null;
+  // Auto-select the latest budget (list is sorted chronologically ascending,
+  // so the most recent budget is the last entry)
+  const budgetId =
+    selectedBudgetId ?? budgets?.[budgets.length - 1]?.id ?? null;
 
   const { data: chartData, isLoading } = useQuery({
     queryKey: ['chart-data', budgetId],

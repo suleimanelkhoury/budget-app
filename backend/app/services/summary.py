@@ -15,6 +15,26 @@ from app.schemas.summary import (
 )
 
 
+def _is_salary_label(label: str) -> bool:
+    """Classify an income label as salary (Gehalt) vs. extra income.
+
+    In the imported template, "Einkommen" is the actual salary while "Extra"
+    holds the carryover (SOLL) and additional income like cashback, interest,
+    work refunds, and tax refunds (IST).
+    """
+    normalized = label.strip().lower()
+    return normalized in {
+        "einkommen",
+        "gehalt",
+        "salary",
+        "brutto",
+        "netto",
+        "nettoeinkommen",
+        "bruttogehalt",
+        "nettogehalt",
+    }
+
+
 def calculate_budget_summary(budget: Budget, db: Session) -> BudgetSummary:
     """Calculate the grand totals for a budget.
 
@@ -25,6 +45,18 @@ def calculate_budget_summary(budget: Budget, db: Session) -> BudgetSummary:
         (i.projected_amount for i in budget.incomes), Decimal("0")
     )
     total_actual_income = sum((i.actual_amount for i in budget.incomes), Decimal("0"))
+
+    # ── Income breakdown: Gehalt vs. Extra ─────
+    total_projected_gehalt = sum(
+        (i.projected_amount for i in budget.incomes if _is_salary_label(i.label)),
+        Decimal("0"),
+    )
+    total_actual_gehalt = sum(
+        (i.actual_amount for i in budget.incomes if _is_salary_label(i.label)),
+        Decimal("0"),
+    )
+    total_projected_extra = total_projected_income - total_projected_gehalt
+    total_actual_extra = total_actual_income - total_actual_gehalt
 
     # ── Expense totals ─────────────────────────
     total_projected_expenses = Decimal("0")
@@ -46,6 +78,10 @@ def calculate_budget_summary(budget: Budget, db: Session) -> BudgetSummary:
     return BudgetSummary(
         total_projected_income=total_projected_income,
         total_actual_income=total_actual_income,
+        total_projected_gehalt=total_projected_gehalt,
+        total_actual_gehalt=total_actual_gehalt,
+        total_projected_extra=total_projected_extra,
+        total_actual_extra=total_actual_extra,
         total_projected_expenses=total_projected_expenses,
         total_actual_expenses=total_actual_expenses,
         projected_balance=projected_balance,

@@ -120,6 +120,10 @@ export interface ExpenseItem {
 export interface BudgetSummary {
   total_projected_income: string;
   total_actual_income: string;
+  total_projected_gehalt: string;
+  total_actual_gehalt: string;
+  total_projected_extra: string;
+  total_actual_extra: string;
   total_projected_expenses: string;
   total_actual_expenses: string;
   projected_balance: string;

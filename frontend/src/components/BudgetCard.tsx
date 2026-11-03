@@ -67,11 +67,17 @@ export function BudgetCard({ budget }: { budget: Budget }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 text-sm">
+      <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
         <div>
-          <p className="text-gray-500 dark:text-gray-500">Income</p>
+          <p className="text-gray-500 dark:text-gray-500">Gehalt</p>
           <p className="font-semibold text-gray-900 dark:text-gray-100">
-            {summary ? formatCurrency(summary.total_actual_income) : '—'}
+            {summary ? formatCurrency(summary.total_actual_gehalt) : '—'}
+          </p>
+        </div>
+        <div>
+          <p className="text-gray-500 dark:text-gray-500">Extra</p>
+          <p className="font-semibold text-gray-900 dark:text-gray-100">
+            {summary ? formatCurrency(summary.total_actual_extra) : '—'}
           </p>
         </div>
         <div>

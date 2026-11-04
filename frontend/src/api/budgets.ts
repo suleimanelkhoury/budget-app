@@ -72,6 +72,35 @@ export const budgetsApi = {
     return response.data;
   },
 
+  /**
+   * Export a budget to an Excel file (same format as the import template).
+   *
+   * Fetches the binary .xlsx blob with the auth token attached and triggers
+   * a browser download of it.
+   */
+  exportExcel: async (id: number): Promise<void> => {
+    const response = await api.get<Blob>(`/budgets/${id}/export`, {
+      responseType: 'blob',
+    });
+
+    // Extract the filename from the Content-Disposition header if present.
+    let filename = `budget-${id}.xlsx`;
+    const disposition = response.headers['content-disposition'];
+    if (typeof disposition === 'string') {
+      const match = /filename="?([^"]+)"?/.exec(disposition);
+      if (match?.[1]) filename = match[1];
+    }
+
+    const url = window.URL.createObjectURL(response.data);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  },
+
   /** Import a budget from an Excel file. */
   importExcel: async (file: File): Promise<ExcelImportResponse> => {
     const formData = new FormData();

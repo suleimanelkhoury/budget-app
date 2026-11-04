@@ -37,6 +37,10 @@ export function BudgetCard({ budget }: { budget: Budget }) {
     },
   });
 
+  const exportMutation = useMutation({
+    mutationFn: () => budgetsApi.exportExcel(budget.id),
+  });
+
   const balance = summary ? parseFloat(summary.actual_balance) : 0;
 
   return (
@@ -52,6 +56,18 @@ export function BudgetCard({ budget }: { budget: Budget }) {
           <span className="text-sm text-gray-500 dark:text-gray-500">
             {formatMonthYear(budget.month, budget.year)}
           </span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              exportMutation.mutate();
+            }}
+            disabled={exportMutation.isPending}
+            className="rounded p-1 text-gray-400 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-950 dark:hover:text-indigo-400 disabled:opacity-50"
+            title="Export budget to Excel"
+            aria-label={`Export budget ${budget.title} to Excel`}
+          >
+            ⬇️
+          </button>
           <button
             onClick={(e) => {
               e.stopPropagation();

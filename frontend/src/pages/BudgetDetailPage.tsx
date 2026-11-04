@@ -144,6 +144,11 @@ export function BudgetDetailPage() {
     },
   });
 
+  // ── Export budget to Excel ──────────────────
+  const exportMutation = useMutation({
+    mutationFn: () => budgetsApi.exportExcel(budgetId),
+  });
+
   // ── Delete budget ──────────────────────────
   const deleteMutation = useMutation({
     mutationFn: (id: number) => budgetsApi.delete(id),
@@ -211,6 +216,15 @@ export function BudgetDetailPage() {
             title="Clone this budget for a new month (recurring expenses)"
           >
             📅 Clone to New Month
+          </button>
+          {/* ── Export to Excel ──────────────────── */}
+          <button
+            onClick={() => exportMutation.mutate()}
+            disabled={exportMutation.isPending}
+            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-50"
+            title="Export this budget to an Excel file (same format as the import template)"
+          >
+            {exportMutation.isPending ? 'Exporting…' : '⬇️ Export Excel'}
           </button>
           {/* ── Delete budget ─────────────────────── */}
           <button

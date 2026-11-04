@@ -2,7 +2,7 @@
 
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -21,6 +21,7 @@ from app.schemas.budget import (
     BudgetUpdate,
 )
 from app.schemas.summary import BudgetComparison, YearlyComparison
+from app.services.excel_export import build_budget_excel
 from app.services.ownership import get_user_budget
 from app.services.summary import compare_user_budgets, compare_user_by_year
 
@@ -97,6 +98,48 @@ def create_budget(
     db.commit()
     db.refresh(budget)
     return budget
+
+
+@router.get(
+    "/{budget_id}/export",
+    summary="Export a budget to an Excel file",
+    responses={
+        200: {
+            "description": "The budget as an .xlsx file in the import template format",
+            "content": {
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {},
+            },
+        }
+    },
+)
+def export_budget(
+    budget_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Response:
+    """Export a budget to an .xlsx file that can be re-imported.
+
+    The generated workbook uses the same layout as the personal monthly
+    budget template understood by ``POST /api/budgets/import`` — income
+    SOLL/IST blocks, two side-by-side category blocks, and per-category
+    "Zwischensumme" subtotal rows — so the exported file round-trips
+    through the import endpoint.
+    """
+    budget = get_user_budget(db, budget_id, current_user)
+    xlsx_bytes = build_budget_excel(budget, db)
+
+    safe_title = budget.title.replace("/", "-").replace("\\", "-")
+    filename = f"budget-{safe_title}.xlsx"
+
+    return Response(
+        content=xlsx_bytes,
+        media_type=(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        ),
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+        },
+    )
 
 
 @router.get(

@@ -3,6 +3,8 @@
 #   docker compose -f docker-compose.prod.yml up --build -d
 #
 # This file uses production builds:
+#   - Caddy: TLS termination with automatic HTTPS (Let's Encrypt) —
+#     set SITE_ADDRESS to your domain to enable it
 #   - Backend: uvicorn (no --reload)
 #   - Frontend: nginx serving the built static files
 #   - PostgreSQL: with persistent volume
@@ -10,7 +12,8 @@
 # Required environment variables (set in .env or export):
 #   POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
 #   SECRET_KEY (use a strong random string!)
-#   FRONTEND_DOMAIN (e.g., https://budget.example.com)
+#   SITE_ADDRESS (e.g., budget.example.com — enables automatic HTTPS)
+#   BACKEND_CORS_ORIGINS (e.g., ["https://budget.example.com"])
 
 services:
   # ── PostgreSQL database ─────────────────────
@@ -71,9 +74,35 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    # Only reachable from the host itself (for smoke tests via curl).
+    # All public traffic goes through the Caddy TLS proxy below.
     ports:
-      - "${FRONTEND_PORT:-3000}:80"
+      - "127.0.0.1:${FRONTEND_PORT:-3000}:80"
     # nginx proxies /api/ to the backend service (see nginx.conf)
+
+  # ── TLS termination (Caddy, automatic HTTPS) ──
+  # Public entry point: ports 80 + 443. Set SITE_ADDRESS to your domain
+  # and Caddy provisions/renews Let's Encrypt certificates automatically
+  # and redirects HTTP → HTTPS. With the default ":80" it serves plain
+  # HTTP (local testing only!).
+  caddy:
+    image: caddy:2-alpine
+    container_name: budget-caddy-prod
+    restart: always
+    depends_on:
+      - frontend
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # HTTP/3
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data      # certificates
+      - caddy_config:/config  # letsencrypt state
 
 volumes:
   postgres_data:
+  caddy_data:
+  caddy_config:

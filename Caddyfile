@@ -1,0 +1,13 @@
+# ── Budget App — Caddy reverse proxy (TLS termination) ──
+#
+# Sits in front of the frontend container and provides automatic HTTPS
+# (Let's Encrypt certificates + HTTP→HTTPS redirect) when SITE_ADDRESS
+# is set to a real domain, e.g. "budget.example.com".
+#
+# The address comes from the SITE_ADDRESS environment variable
+# (see docker-compose.prod.yml / .env.prod.example). The default ":80"
+# serves plain HTTP — only for local testing, never in production.
+
+{$SITE_ADDRESS} {
+	reverse_proxy frontend:80
+}

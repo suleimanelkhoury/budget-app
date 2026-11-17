@@ -31,6 +31,13 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000"]
 
 
+# The well-known dev default — must never be used in production.
+INSECURE_DEFAULT_SECRET_KEY = "change-me-in-production"
+
+# Minimum entropy requirement for the signing key (HS256).
+MIN_SECRET_KEY_LENGTH = 32
+
+
 @lru_cache
 def get_settings() -> Settings:
     """Return a cached Settings instance."""
@@ -38,3 +45,31 @@ def get_settings() -> Settings:
 
 
 settings = get_settings()
+
+
+def validate_security_settings() -> None:
+    """Fail fast if security-critical settings are still at their defaults.
+
+    Called on application startup. Skipped when DEBUG is enabled so local
+    development and the test suite keep working with the default key.
+
+    Raises:
+        RuntimeError: If SECRET_KEY is the known default or too short.
+            Without a strong secret, JWTs can be forged by anyone who knows
+            the default, i.e. full account takeover.
+    """
+    if settings.DEBUG:
+        return
+
+    if settings.SECRET_KEY == INSECURE_DEFAULT_SECRET_KEY:
+        raise RuntimeError(
+            "SECRET_KEY is still set to the default value. Anyone can forge "
+            "authentication tokens with it. Generate a strong key with:\n"
+            "  python -c \"import secrets; print(secrets.token_urlsafe(32))\""
+        )
+    if len(settings.SECRET_KEY) < MIN_SECRET_KEY_LENGTH:
+        raise RuntimeError(
+            f"SECRET_KEY is too short (minimum {MIN_SECRET_KEY_LENGTH} "
+            "characters). Generate a strong key with:\n"
+            "  python -c \"import secrets; print(secrets.token_urlsafe(32))\""
+        )

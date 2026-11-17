@@ -1,5 +1,7 @@
 """FastAPI application entry point."""
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -13,7 +15,7 @@ from app.api import (
     summary_router,
     templates_router,
 )
-from app.core.config import settings
+from app.core.config import settings, validate_security_settings
 from app.core.exception_handlers import register_exception_handlers
 from app.core.logging import get_logger, setup_logging
 
@@ -21,9 +23,21 @@ from app.core.logging import get_logger, setup_logging
 setup_logging(debug=settings.DEBUG)
 logger = get_logger(__name__)
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Validate security-critical settings before serving requests."""
+    validate_security_settings()
+    logger.info(
+        "app_starting", app_name=settings.APP_NAME, version=settings.APP_VERSION
+    )
+    yield
+
+
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
+    lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url=f"{settings.API_V1_PREFIX}/openapi.json",
@@ -41,7 +55,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-logger.info("app_starting", app_name=settings.APP_NAME, version=settings.APP_VERSION)
+logger.info("app_initialized", app_name=settings.APP_NAME, version=settings.APP_VERSION)
 
 # ── Routers ──────────────────────────────────
 app.include_router(auth_router)

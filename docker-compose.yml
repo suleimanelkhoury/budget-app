@@ -43,7 +43,8 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-budget}:${POSTGRES_PASSWORD:-budget}@db:5432/${POSTGRES_DB:-budget}
       SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
-      DEBUG: ${DEBUG:-false}
+      # DEBUG=true skips the startup SECRET_KEY guard (dev convenience only)
+      DEBUG: ${DEBUG:-true}
       BACKEND_CORS_ORIGINS: '["http://localhost:5173","http://localhost:3000"]'
     ports:
       - "8000:8000"

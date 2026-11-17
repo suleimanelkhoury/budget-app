@@ -132,7 +132,8 @@ def register_exception_handlers(app: FastAPI) -> None:
         )
         return _error_response(
             request,
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            # HTTP_422_UNPROCESSABLE_ENTITY was renamed in starlette >= 0.46
+            getattr(status, "HTTP_422_UNPROCESSABLE_CONTENT", 422),
             message,
             detail=exc.errors(),
         )

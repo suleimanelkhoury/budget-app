@@ -14,6 +14,8 @@ import {
   BarChart,
   Cell,
   Legend,
+  Line,
+  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -78,6 +80,26 @@ export function ChartsPage() {
   const selectedCategoryData = detail?.categories.find(
     (c) => c.name === selectedCategory,
   );
+
+  // ── Category trend (last 12 months) ─────────
+  const { data: trendData, isLoading: trendLoading } = useQuery({
+    queryKey: queryKeys.budget.categoryTrend(selectedCategory!),
+    queryFn: () => budgetsApi.getCategoryTrend(selectedCategory!),
+    enabled: !!selectedCategory,
+  });
+
+  const trendSeries =
+    trendData?.months.map((m) => ({
+      name:
+        m.month && m.year
+          ? new Intl.DateTimeFormat('de-DE', {
+              month: 'short',
+              year: '2-digit',
+            }).format(new Date(m.year, m.month - 1, 1))
+          : m.label,
+      projected: parseFloat(m.projected),
+      actual: parseFloat(m.actual),
+    })) ?? [];
 
   // Prepare data for pie chart (actual expenses by category)
   const pieData =
@@ -262,7 +284,7 @@ export function ChartsPage() {
           onClick={() => setSelectedCategory(null)}
         >
           <div
-            className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-5 shadow-xl dark:bg-gray-800"
+            className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-5 shadow-xl dark:bg-gray-800"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
@@ -321,6 +343,44 @@ export function ChartsPage() {
                 </table>
               </div>
             )}
+
+            {/* ── 12-month trend for this category ── */}
+            <div className="mt-5">
+              <h4 className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Last 12 Months (SOLL vs IST)
+              </h4>
+              {trendLoading ? (
+                <Spinner />
+              ) : (
+                <ResponsiveContainer width="100%" height={240}>
+                  <LineChart data={trendSeries} margin={{ left: 8, right: 24 }}>
+                    <XAxis dataKey="name" fontSize={11} />
+                    <YAxis fontSize={11} />
+                    <Tooltip
+                      formatter={(value) => formatCurrency(Number(value))}
+                      contentStyle={CHART_TOOLTIP_STYLE}
+                    />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="projected"
+                      name="SOLL"
+                      stroke={SERIES_COLORS.Projected}
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="actual"
+                      name="IST"
+                      stroke={SERIES_COLORS.Actual}
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </div>
           </div>
         </div>
       )}

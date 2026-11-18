@@ -60,6 +60,10 @@ class ChartDataPoint(BaseModel):
     label: str
     projected: Decimal
     actual: Decimal
+    # Only set by the category-trend endpoint; lets the frontend render
+    # proper month-year axis labels.
+    month: int | None = None
+    year: int | None = None
 
 
 class ChartData(BaseModel):
@@ -71,6 +75,13 @@ class ChartData(BaseModel):
     expenses_by_category: list[ChartDataPoint]
     # Summary numbers for comparison charts
     income_vs_expenses: ChartDataPoint
+
+
+class CategoryTrendResponse(BaseModel):
+    """Monthly SOLL/IST totals for one category across recent months."""
+
+    category_name: str
+    months: list[ChartDataPoint]
 
 
 class BudgetComparisonEntry(BaseModel):

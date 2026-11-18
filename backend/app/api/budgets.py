@@ -2,7 +2,7 @@
 
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -20,7 +20,12 @@ from app.schemas.budget import (
     BudgetResponse,
     BudgetUpdate,
 )
-from app.schemas.summary import BudgetComparison, YearlyComparison
+from app.schemas.summary import (
+    BudgetComparison,
+    CategoryTrendResponse,
+    ChartDataPoint,
+    YearlyComparison,
+)
 from app.services.excel_export import build_budget_excel
 from app.services.ownership import get_user_budget
 from app.services.summary import compare_user_budgets, compare_user_by_year
@@ -74,6 +79,54 @@ def compare_budgets_yearly(
     and per-category actual spending for each calendar year.
     """
     return compare_user_by_year(current_user, db)
+
+
+@router.get(
+    "/category-trend",
+    response_model=CategoryTrendResponse,
+    summary="Monthly SOLL/IST totals for one category across recent months",
+)
+def category_trend(
+    category: str,
+    months: int = Query(default=12, ge=1, le=24),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> CategoryTrendResponse:
+    """Return the recent 6-12 month history of a single category.
+
+    For each of the user's most recent `months` budgets, sums the
+    projected and actual costs of the matching category (case-insensitive
+    name match). Budgets without that category contribute zeros, so the
+    trend shows gaps instead of skipping months.
+    """
+    budget_list = sorted(
+        current_user.budgets, key=lambda b: (b.year, b.month)
+    )[-months:]
+
+    trend: list[ChartDataPoint] = []
+    for budget in budget_list:
+        projected = Decimal("0")
+        actual = Decimal("0")
+        for cat in budget.categories:
+            if cat.name.strip().lower() == category.strip().lower():
+                projected = sum(
+                    (item.projected_cost for item in cat.items), Decimal("0")
+                )
+                actual = sum(
+                    (item.actual_cost for item in cat.items), Decimal("0")
+                )
+                break
+        trend.append(
+            ChartDataPoint(
+                label=budget.title,
+                projected=projected,
+                actual=actual,
+                month=budget.month,
+                year=budget.year,
+            )
+        )
+
+    return CategoryTrendResponse(category_name=category, months=trend)
 
 
 @router.post(

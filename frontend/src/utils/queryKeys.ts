@@ -15,6 +15,7 @@ export const queryKeys = {
     detail: (id: number) => ['budget', id] as const,
     summary: (id: number) => ['budget-summary', id] as const,
     chartData: (id: number) => ['chart-data', id] as const,
+    categoryTrend: (category: string) => ['category-trend', category] as const,
   },
   comparison: ['budget-comparison'] as const,
   yearlyComparison: ['budget-comparison-yearly'] as const,

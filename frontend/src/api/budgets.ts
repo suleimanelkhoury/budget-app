@@ -10,6 +10,7 @@ import type {
   BudgetCreate,
   BudgetDetail,
   BudgetSummary,
+  CategoryTrend,
   ChartData,
   ExcelImportResponse,
   YearlyComparison,
@@ -60,6 +61,14 @@ export const budgetsApi = {
   /** Compare all budgets aggregated by year (yearly comparison). */
   compareYearly: async (): Promise<YearlyComparison> => {
     const response = await api.get<YearlyComparison>('/budgets/compare-yearly');
+    return response.data;
+  },
+
+  /** Monthly SOLL/IST totals for one category across recent months. */
+  getCategoryTrend: async (category: string): Promise<CategoryTrend> => {
+    const response = await api.get<CategoryTrend>('/budgets/category-trend', {
+      params: { category },
+    });
     return response.data;
   },
 

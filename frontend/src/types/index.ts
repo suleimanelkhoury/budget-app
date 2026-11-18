@@ -131,6 +131,9 @@ export interface ChartDataPoint {
   label: string;
   projected: string;
   actual: string;
+  // Only set on category-trend data points
+  month?: number | null;
+  year?: number | null;
 }
 
 export interface ChartData {
@@ -138,6 +141,12 @@ export interface ChartData {
   budget_title: string;
   expenses_by_category: ChartDataPoint[];
   income_vs_expenses: ChartDataPoint;
+}
+
+// ── Category Trend ───────────────────────────
+export interface CategoryTrend {
+  category_name: string;
+  months: ChartDataPoint[];
 }
 
 // ── Multi-month Comparison ───────────────────

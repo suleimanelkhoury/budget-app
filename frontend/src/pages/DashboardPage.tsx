@@ -68,11 +68,23 @@ export function DashboardPage() {
       ) ?? budgets[budgets.length - 1]
     : undefined;
 
-  const orderedBudgets = budgets
-    ? currentBudget
-      ? [currentBudget, ...budgets.filter((b) => b.id !== currentBudget.id)]
-      : budgets
-    : [];
+  // ── Year-grouped archive ────────────────────
+  // All budgets grouped by year (newest year first, newest month
+  // first within a year). Sections are collapsible; by default the
+  // newest year is expanded and older years are collapsed. Explicit
+  // toggles win over the default. The current/latest budget appears
+  // in its year section, highlighted.
+  const archiveBudgets = budgets ?? [];
+  const archiveYears = [...new Set(archiveBudgets.map((b) => b.year))].sort(
+    (a, b) => b - a,
+  );
+  const [collapsedOverrides, setCollapsedOverrides] = useState<
+    Record<number, boolean>
+  >({});
+  const isCollapsed = (year: number) =>
+    collapsedOverrides[year] ?? year !== archiveYears[0];
+  const toggleYear = (year: number) =>
+    setCollapsedOverrides((prev) => ({ ...prev, [year]: !isCollapsed(year) }));
 
   return (
     <div>
@@ -178,16 +190,49 @@ export function DashboardPage() {
       <DashboardSummary />
 
       {/* ── Budget grid ───────────────────────── */}
-      {orderedBudgets.length > 0 ? (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {orderedBudgets.map((budget) => (
-            <BudgetCard
-              key={budget.id}
-              budget={budget}
-              isCurrent={budget.id === currentBudget?.id}
-            />
-          ))}
-        </div>
+      {archiveBudgets.length > 0 ? (
+        archiveYears.map((year) => {
+          const yearBudgets = archiveBudgets
+            .filter((b) => b.year === year)
+            .sort((a, b) => b.month - a.month); // newest month first
+          const collapsed = isCollapsed(year);
+          return (
+            <section key={year} className="mb-6">
+              <button
+                type="button"
+                onClick={() => toggleYear(year)}
+                aria-expanded={!collapsed}
+                className="mb-3 flex w-full items-center gap-2 text-left"
+              >
+                <span
+                  className={`text-sm text-gray-500 transition-transform dark:text-gray-400 ${
+                    collapsed ? '' : 'rotate-90'
+                  }`}
+                >
+                  ▶
+                </span>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {year}
+                </h2>
+                <span className="text-sm text-gray-500 dark:text-gray-500">
+                  {yearBudgets.length}{' '}
+                  {yearBudgets.length === 1 ? 'budget' : 'budgets'}
+                </span>
+              </button>
+              {!collapsed && (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {yearBudgets.map((budget) => (
+                    <BudgetCard
+                      key={budget.id}
+                      budget={budget}
+                      isCurrent={budget.id === currentBudget?.id}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+          );
+        })
       ) : (
         <div className="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center dark:border-gray-700 dark:bg-gray-800">
           <p className="text-gray-500 dark:text-gray-500">

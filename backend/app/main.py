@@ -18,6 +18,7 @@ from app.api import (
 from app.core.config import settings, validate_security_settings
 from app.core.exception_handlers import register_exception_handlers
 from app.core.logging import get_logger, setup_logging
+from app.core.rate_limit import RATE_LIMIT_RULES, RateLimitMiddleware
 
 # Initialize structured logging
 setup_logging(debug=settings.DEBUG)
@@ -54,6 +55,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Rate limiting — brute-force protection for login/register
+# (see app/core/rate_limit.py)
+app.add_middleware(RateLimitMiddleware, rules=RATE_LIMIT_RULES)
 
 logger.info("app_initialized", app_name=settings.APP_NAME, version=settings.APP_VERSION)
 

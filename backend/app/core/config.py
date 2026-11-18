@@ -30,6 +30,14 @@ class Settings(BaseSettings):
     # ── CORS ───────────────────────────────────
     BACKEND_CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000"]
 
+    # ── Rate limiting (app/core/rate_limit.py) ─
+    # Fixed-window limits per client IP, applied to the auth endpoints.
+    # Note: enforced per uvicorn worker (prod runs 4 workers).
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_WINDOW_SECONDS: int = 60
+    RATE_LIMIT_LOGIN_MAX: int = 5
+    RATE_LIMIT_REGISTER_MAX: int = 3
+
 
 # The well-known dev default — must never be used in production.
 INSECURE_DEFAULT_SECRET_KEY = "change-me-in-production"

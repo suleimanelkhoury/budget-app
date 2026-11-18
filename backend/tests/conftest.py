@@ -1,5 +1,12 @@
 """Pytest configuration and shared fixtures."""
 
+import os
+
+# Disable rate limiting for the general test suite — the fixtures below
+# register users constantly and would trip the limiter nondeterministically.
+# The limiter itself is tested explicitly in test_rate_limit.py.
+os.environ["RATE_LIMIT_ENABLED"] = "false"
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine

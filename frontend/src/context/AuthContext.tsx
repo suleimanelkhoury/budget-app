@@ -72,6 +72,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // ── Logout ─────────────────────────────────
   const logout = useCallback(() => {
+    // Revoke the token server-side (fire-and-forget — local logout must
+    // work even if the request fails, e.g. token already expired).
+    authApi.logout().catch(() => {
+      /* token already invalid — nothing to revoke */
+    });
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     setUser(null);

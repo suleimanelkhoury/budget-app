@@ -1,20 +1,24 @@
-"""Authentication router — register and login endpoints."""
+"""Authentication router — register, login, logout, and /me endpoints."""
+
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import credentials_exception, get_current_user, oauth2_scheme
 from app.core.exceptions import ConflictError
 from app.core.security import (
     create_access_token,
+    decode_access_token,
     hash_password,
     verify_dummy_password,
     verify_password,
 )
 from app.models.user import User
 from app.schemas.auth import Token, UserCreate, UserLogin, UserResponse
+from app.services.token_blocklist import revoke_token
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -109,3 +113,28 @@ def login(
 def get_me(current_user: User = Depends(get_current_user)) -> User:
     """Return the profile of the logged-in user."""
     return current_user
+
+
+@router.post(
+    "/logout",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Revoke the current access token (logout)",
+)
+def logout(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    """Revoke the presented access token server-side.
+
+    The token is added to the blocklist until its natural expiry, so it
+    can no longer be used — unlike client-side logout, which only
+    deletes the token from the browser. Requires a valid (non-revoked)
+    token; already-revoked tokens are rejected by get_current_user.
+    """
+    payload = decode_access_token(token)
+    if payload is None or payload.get("jti") is None:
+        raise credentials_exception
+
+    expires_at = datetime.fromtimestamp(payload["exp"], tz=UTC)
+    revoke_token(db, jti=payload["jti"], expires_at=expires_at)

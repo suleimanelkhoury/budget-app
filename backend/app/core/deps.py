@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import decode_access_token
 from app.models.user import User
+from app.services.token_blocklist import is_token_revoked
 
 # Token URL is the login endpoint; used by Swagger UI's "Authorize" button
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
@@ -25,10 +26,20 @@ def get_current_user(
 ) -> User:
     """Decode the JWT token and return the corresponding User.
 
-    Raises HTTP 401 if the token is invalid or the user doesn't exist.
+    Rejects revoked tokens (jti blocklist — see app/services/token_blocklist.py).
+    Raises HTTP 401 if the token is invalid, revoked, or the user doesn't exist.
     """
     payload = decode_access_token(token)
     if payload is None:
+        raise credentials_exception
+
+    jti = payload.get("jti")
+    if jti is None:
+        # Tokens issued before revocation support was added carry no jti.
+        # Reject them so "logout" can't be bypassed with a legacy token.
+        raise credentials_exception
+
+    if is_token_revoked(db, jti):
         raise credentials_exception
 
     user_id_str = payload.get("sub")

@@ -1,6 +1,7 @@
 """Security utilities — password hashing and JWT token handling."""
 
 import secrets
+import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -65,6 +66,9 @@ def create_access_token(
         "sub": str(subject),
         "exp": expire,
         "iat": datetime.now(UTC),
+        # jti (JWT ID) — unique token identifier, used by the revocation
+        # blocklist so tokens can be invalidated server-side (logout).
+        "jti": uuid.uuid4().hex,
         "type": "access",
     }
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)

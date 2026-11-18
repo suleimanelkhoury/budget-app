@@ -1,5 +1,5 @@
 /**
- * Auth API service — register and login.
+ * Auth API service — register, login, and logout.
  */
 
 import { api } from './client';
@@ -16,5 +16,10 @@ export const authApi = {
   login: async (data: UserLogin): Promise<Token> => {
     const response = await api.post<Token>('/auth/login', data);
     return response.data;
+  },
+
+  /** Revoke the current access token server-side. */
+  logout: async (): Promise<void> => {
+    await api.post('/auth/logout');
   },
 };

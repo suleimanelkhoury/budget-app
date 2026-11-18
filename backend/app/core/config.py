@@ -25,7 +25,9 @@ class Settings(BaseSettings):
     # ── Auth / JWT ─────────────────────────────
     SECRET_KEY: str = "change-me-in-production"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
+    # 8 hours — with the jti blocklist (server-side revocation) a stolen
+    # token is at most useful for one workday. Previously 24 hours.
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 8
 
     # ── CORS ───────────────────────────────────
     BACKEND_CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000"]

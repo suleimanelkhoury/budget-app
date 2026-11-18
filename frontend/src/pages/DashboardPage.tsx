@@ -52,6 +52,23 @@ export function DashboardPage() {
     return <Spinner />;
   }
 
+  // ── Current/latest budget ───────────────────
+  // This month's budget if one exists, otherwise the most recent one.
+  // The backend returns budgets sorted by (year, month) ascending, so
+  // the last element is the latest.
+  const now = new Date();
+  const currentBudget = budgets
+    ? budgets.find(
+        (b) => b.month === now.getMonth() + 1 && b.year === now.getFullYear(),
+      ) ?? budgets[budgets.length - 1]
+    : undefined;
+
+  const orderedBudgets = budgets
+    ? currentBudget
+      ? [currentBudget, ...budgets.filter((b) => b.id !== currentBudget.id)]
+      : budgets
+    : [];
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -153,10 +170,14 @@ export function DashboardPage() {
       )}
 
       {/* ── Budget grid ───────────────────────── */}
-      {budgets && budgets.length > 0 ? (
+      {orderedBudgets.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {budgets.map((budget) => (
-            <BudgetCard key={budget.id} budget={budget} />
+          {orderedBudgets.map((budget) => (
+            <BudgetCard
+              key={budget.id}
+              budget={budget}
+              isCurrent={budget.id === currentBudget?.id}
+            />
           ))}
         </div>
       ) : (

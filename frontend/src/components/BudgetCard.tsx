@@ -15,7 +15,13 @@ import { queryKeys } from '../utils/queryKeys';
 import { ConfirmDialog } from './ConfirmDialog';
 import type { Budget } from '../types';
 
-export function BudgetCard({ budget }: { budget: Budget }) {
+export function BudgetCard({
+  budget,
+  isCurrent = false,
+}: {
+  budget: Budget;
+  isCurrent?: boolean;
+}) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -46,12 +52,23 @@ export function BudgetCard({ budget }: { budget: Budget }) {
   return (
     <div
       onClick={() => navigate(`/budgets/${budget.id}`)}
-      className="cursor-pointer rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
+      className={`cursor-pointer rounded-xl border bg-white p-5 shadow-sm transition-shadow hover:shadow-md dark:bg-gray-800 ${
+        isCurrent
+          ? 'border-indigo-400 ring-1 ring-indigo-400 dark:border-indigo-500 dark:ring-indigo-500'
+          : 'border-gray-200 dark:border-gray-700'
+      }`}
     >
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          {budget.title}
-        </h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            {budget.title}
+          </h3>
+          {isCurrent && (
+            <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">
+              Current
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-500 dark:text-gray-500">
             {formatMonthYear(budget.month, budget.year)}

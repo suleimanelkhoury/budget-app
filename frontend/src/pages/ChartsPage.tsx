@@ -8,7 +8,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Bar,
   BarChart,
@@ -24,6 +24,7 @@ import {
 import { budgetsApi } from '../api';
 import { ChartContainer } from '../components/ChartContainer';
 import { Spinner } from '../components/Spinner';
+import { balanceColor } from '../utils/balance';
 import { formatCurrency } from '../utils/format';
 import { queryKeys } from '../utils/queryKeys';
 import {
@@ -34,6 +35,7 @@ import {
 
 export function ChartsPage() {
   const [selectedBudgetId, setSelectedBudgetId] = useState<number | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const { data: budgets } = useQuery({
     queryKey: queryKeys.budgets,
@@ -45,11 +47,37 @@ export function ChartsPage() {
   const budgetId =
     selectedBudgetId ?? budgets?.[budgets.length - 1]?.id ?? null;
 
+  // Reset the drill-down when a different budget is selected
+  useEffect(() => {
+    setSelectedCategory(null);
+  }, [budgetId]);
+
+  // Close the drill-down modal with the Escape key
+  useEffect(() => {
+    if (!selectedCategory) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelectedCategory(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [selectedCategory]);
+
   const { data: chartData, isLoading } = useQuery({
     queryKey: queryKeys.budget.chartData(budgetId!),
     queryFn: () => budgetsApi.getChartData(budgetId!),
     enabled: !!budgetId,
   });
+
+  // Detail (categories + items) for the drill-down panel
+  const { data: detail } = useQuery({
+    queryKey: queryKeys.budget.detail(budgetId!),
+    queryFn: () => budgetsApi.get(budgetId!),
+    enabled: !!budgetId,
+  });
+
+  const selectedCategoryData = detail?.categories.find(
+    (c) => c.name === selectedCategory,
+  );
 
   // Prepare data for pie chart (actual expenses by category)
   const pieData =
@@ -95,6 +123,12 @@ export function ChartsPage() {
       {isLoading && <Spinner />}
 
       {chartData && (
+        <p className="mb-4 text-sm text-gray-500 dark:text-gray-500">
+          Tip: click a bar or pie slice to see that category's items.
+        </p>
+      )}
+
+      {chartData && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* ── Bar chart: expenses by category ─── */}
           {/* Horizontal layout: with ~12 categories, rotated x-axis
@@ -132,12 +166,30 @@ export function ChartsPage() {
                   name="SOLL"
                   fill={SERIES_COLORS.Projected}
                   radius={[0, 4, 4, 0]}
+                  onClick={(data) => {
+                    const label = (data as { label?: string })?.label;
+                    if (label) {
+                      setSelectedCategory((prev) =>
+                        prev === label ? null : label,
+                      );
+                    }
+                  }}
+                  className="cursor-pointer"
                 />
                 <Bar
                   dataKey="actual"
                   name="IST"
                   fill={SERIES_COLORS.Actual}
                   radius={[0, 4, 4, 0]}
+                  onClick={(data) => {
+                    const label = (data as { label?: string })?.label;
+                    if (label) {
+                      setSelectedCategory((prev) =>
+                        prev === label ? null : label,
+                      );
+                    }
+                  }}
+                  className="cursor-pointer"
                 />
               </BarChart>
             </ResponsiveContainer>
@@ -156,6 +208,15 @@ export function ChartsPage() {
                   outerRadius={120}
                   label={(entry) => `${entry.name}: ${entry.value}€`}
                   fontSize={11}
+                  onClick={(entry) => {
+                    const name = (entry as { name?: string })?.name;
+                    if (name) {
+                      setSelectedCategory((prev) =>
+                        prev === name ? null : name,
+                      );
+                    }
+                  }}
+                  className="cursor-pointer"
                 >
                   {pieData.map((_, index) => (
                     <Cell
@@ -191,6 +252,76 @@ export function ChartsPage() {
               </div>
             </div>
           </ChartContainer>
+        </div>
+      )}
+
+      {/* ── Category drill-down modal ──────────── */}
+      {selectedCategoryData && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setSelectedCategory(null)}
+        >
+          <div
+            className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-5 shadow-xl dark:bg-gray-800"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {selectedCategoryData.name} — Items
+              </h3>
+              <button
+                type="button"
+                onClick={() => setSelectedCategory(null)}
+                className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                aria-label="Close category details"
+              >
+                ✕
+              </button>
+            </div>
+            {selectedCategoryData.items.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-500">
+                No items in this category.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200 text-left text-gray-500 dark:border-gray-700 dark:text-gray-400">
+                      <th className="py-2 pr-4 font-medium">Item</th>
+                      <th className="py-2 font-medium text-right">SOLL</th>
+                      <th className="py-2 font-medium text-right">IST</th>
+                      <th className="py-2 font-medium text-right">Difference</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedCategoryData.items.map((item) => (
+                      <tr
+                        key={item.id}
+                        className="border-b border-gray-100 dark:border-gray-800"
+                      >
+                        <td className="py-2 pr-4 text-gray-900 dark:text-gray-100">
+                          {item.label}
+                        </td>
+                        <td className="py-2 text-right text-gray-700 dark:text-gray-300">
+                          {formatCurrency(item.projected_cost)}
+                        </td>
+                        <td className="py-2 text-right text-gray-700 dark:text-gray-300">
+                          {formatCurrency(item.actual_cost)}
+                        </td>
+                        <td
+                          className={`py-2 text-right font-medium ${balanceColor(
+                            parseFloat(item.difference),
+                          )}`}
+                        >
+                          {formatCurrency(item.difference)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

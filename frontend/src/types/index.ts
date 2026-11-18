@@ -200,49 +200,6 @@ export interface BudgetClone {
   copy_actuals?: boolean;
 }
 
-// ── Budget Templates ─────────────────────────
-export interface TemplateItem {
-  id: number;
-  category_id: number;
-  label: string;
-}
-
-export interface TemplateItemCreate {
-  label: string;
-}
-
-export interface TemplateCategory {
-  id: number;
-  template_id: number;
-  name: string;
-  sort_order: number;
-  items: TemplateItem[];
-}
-
-export interface TemplateCategoryCreate {
-  name: string;
-  sort_order?: number;
-  items: TemplateItemCreate[];
-}
-
-export interface BudgetTemplate {
-  id: number;
-  user_id: number;
-  name: string;
-  categories: TemplateCategory[];
-}
-
-export interface BudgetTemplateCreate {
-  name: string;
-  categories: TemplateCategoryCreate[];
-}
-
-export interface CreateBudgetFromTemplate {
-  title: string;
-  month: number;
-  year: number;
-}
-
 // ── Excel Import ─────────────────────────────
 export interface ExcelImportResponse {
   budget_id: number;

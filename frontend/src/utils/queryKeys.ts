@@ -19,7 +19,6 @@ export const queryKeys = {
   },
   comparison: ['budget-comparison'] as const,
   yearlyComparison: ['budget-comparison-yearly'] as const,
-  templates: ['templates'] as const,
 };
 
 /**

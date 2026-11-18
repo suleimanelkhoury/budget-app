@@ -22,6 +22,11 @@ export function DashboardPage() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newBudget, setNewBudget] = useState(emptyBudgetDraft);
+  // Collapsed year sections on the dashboard (explicit toggles only;
+  // the default — newest year expanded — is derived at render time).
+  const [collapsedOverrides, setCollapsedOverrides] = useState<
+    Record<number, boolean>
+  >({});
 
   const { data: budgets, isLoading } = useQuery({
     queryKey: queryKeys.budgets,
@@ -78,9 +83,6 @@ export function DashboardPage() {
   const archiveYears = [...new Set(archiveBudgets.map((b) => b.year))].sort(
     (a, b) => b - a,
   );
-  const [collapsedOverrides, setCollapsedOverrides] = useState<
-    Record<number, boolean>
-  >({});
   const isCollapsed = (year: number) =>
     collapsedOverrides[year] ?? year !== archiveYears[0];
   const toggleYear = (year: number) =>

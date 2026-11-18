@@ -13,7 +13,6 @@ from app.api import (
     expense_items_router,
     income_router,
     summary_router,
-    templates_router,
 )
 from app.core.config import settings, validate_security_settings
 from app.core.exception_handlers import register_exception_handlers
@@ -74,7 +73,6 @@ app.include_router(categories_router)
 app.include_router(expense_items_router)
 app.include_router(summary_router)
 app.include_router(excel_import_router)
-app.include_router(templates_router)
 
 
 @app.get("/api/health", tags=["health"])

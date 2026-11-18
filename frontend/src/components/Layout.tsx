@@ -15,7 +15,6 @@ const navItems = [
   { to: '/', label: 'Dashboard', icon: '📊' },
   { to: '/charts', label: 'Charts', icon: '📈' },
   { to: '/compare', label: 'Comparison', icon: '📅' },
-  { to: '/templates', label: 'Templates', icon: '📋' },
   { to: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 

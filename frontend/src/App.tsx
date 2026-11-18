@@ -11,7 +11,6 @@ import { DashboardPage } from './pages/DashboardPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { SettingsPage } from './pages/SettingsPage';
-import { TemplatesPage } from './pages/TemplatesPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,7 +40,6 @@ function App() {
                   <Route path="/budgets/:id" element={<BudgetDetailPage />} />
                   <Route path="/charts" element={<ChartsPage />} />
                   <Route path="/compare" element={<ComparisonPage />} />
-                  <Route path="/templates" element={<TemplatesPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
                 </Route>
               </Route>

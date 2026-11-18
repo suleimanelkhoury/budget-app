@@ -7,4 +7,3 @@ export { budgetsApi } from './budgets';
 export { incomeApi } from './income';
 export { categoriesApi } from './categories';
 export { expenseItemsApi } from './expenseItems';
-export { templatesApi } from './templates';

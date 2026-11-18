@@ -29,12 +29,6 @@ class User(Base):
         cascade="all, delete-orphan",
         order_by="Budget.year.desc(), Budget.month.desc()",
     )
-    templates: Mapped[list["BudgetTemplate"]] = relationship(  # noqa: F821
-        "BudgetTemplate",
-        back_populates="user",
-        cascade="all, delete-orphan",
-        order_by="BudgetTemplate.id",
-    )
 
     def __repr__(self) -> str:
         return f"<User id={self.id} email={self.email!r}>"

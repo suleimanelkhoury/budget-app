@@ -1,6 +1,6 @@
 /**
  * Shared chart theme — colors and Recharts styling used across
- * ChartsPage, ComparisonPage, and YearlyComparisonView.
+ * ChartsPage, ComparisonPage, DashboardSummary, and CategorySpendingModal.
  */
 
 /** Palette used to color pie slices (cycled). */

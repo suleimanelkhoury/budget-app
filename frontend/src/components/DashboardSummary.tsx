@@ -29,6 +29,7 @@ import { budgetsApi } from '../api';
 import { balanceColor } from '../utils/balance';
 import { formatCurrency } from '../utils/format';
 import { queryKeys } from '../utils/queryKeys';
+import { CategorySpendingModal } from './CategorySpendingModal';
 import type { BudgetComparisonEntry } from '../types';
 
 interface StatTileProps {
@@ -62,6 +63,7 @@ export function DashboardSummary() {
   const currentYear = new Date().getFullYear();
   // null = automatic: current year if it has budgets, else the newest
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [showCategorySpending, setShowCategorySpending] = useState(false);
 
   const { data: comparison, isLoading: comparisonLoading } = useQuery({
     queryKey: queryKeys.comparison,
@@ -130,21 +132,30 @@ export function DashboardSummary() {
 
   return (
     <div className="mb-6">
-      {/* ── Year selector ───────────────────────── */}
-      {availableYears.length > 1 && (
-        <div className="mb-4 flex flex-wrap gap-2">
-          {availableYears.map((year) => (
-            <button
-              key={year}
-              type="button"
-              onClick={() => setSelectedYear(year)}
-              className={pillButton(year === activeYear)}
-            >
-              {year}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* ── Year selector + category spending ──── */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        {availableYears.map((year) => (
+          <button
+            key={year}
+            type="button"
+            onClick={() => setSelectedYear(year)}
+            className={pillButton(year === activeYear)}
+          >
+            {year}
+          </button>
+        ))}
+        <span aria-hidden="true" className="text-gray-300 dark:text-gray-600">
+          |
+        </span>
+        <button
+          type="button"
+          onClick={() => setShowCategorySpending(true)}
+          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+          title={`Actual spending per category in ${activeYear}`}
+        >
+          📊 Category Spending
+        </button>
+      </div>
 
       {/* ── Row 1: money-flow overview ──────────── */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -201,6 +212,14 @@ export function DashboardSummary() {
           title={`Invested ÷ overall income (new money, carryover excluded). On average the same for every month.`}
         />
       </div>
+
+      {/* ── Category spending popup ─────────────── */}
+      {showCategorySpending && (
+        <CategorySpendingModal
+          year={activeYear}
+          onClose={() => setShowCategorySpending(false)}
+        />
+      )}
     </div>
   );
 }

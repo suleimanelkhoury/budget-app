@@ -1,14 +1,12 @@
 /**
- * Comparison Page — multi-month and yearly comparison views.
+ * Comparison Page — multi-month comparison view.
  *
- * Two tabs:
- *  - Multi-Month: line charts and a table of per-month totals.
- *  - Yearly: aggregates all budgets by calendar year, with a bar chart of
- *    per-category actual spending (e.g. how much invested, how much for
- *    Wohnen) and a summary table.
+ * Line charts and a table of per-month totals: income vs. expenses
+ * (with the plan as dashed lines) and the cash balance over time.
+ * The per-year category breakdown lives in a popup on the dashboard
+ * (CategorySpendingModal).
  */
 
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   CartesianGrid,
@@ -24,16 +22,12 @@ import {
 import { budgetsApi } from '../api';
 import { ChartContainer } from '../components/ChartContainer';
 import { Spinner } from '../components/Spinner';
-import { YearlyComparisonView } from '../components/YearlyComparisonView';
 import { formatCurrency, formatMonthYear } from '../utils/format';
 import { balanceColor } from '../utils/balance';
 import { CHART_TOOLTIP_STYLE, SERIES_COLORS } from '../utils/chartTheme';
 import { queryKeys } from '../utils/queryKeys';
 
-type Tab = 'monthly' | 'yearly';
-
 export function ComparisonPage() {
-  const [tab, setTab] = useState<Tab>('monthly');
   const { data: comparison, isLoading } = useQuery({
     queryKey: queryKeys.comparison,
     queryFn: budgetsApi.compare,
@@ -61,34 +55,14 @@ export function ComparisonPage() {
     );
   }
 
-  const tabButton = (active: boolean) =>
-    `rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-      active
-        ? 'bg-indigo-600 text-white'
-        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
-    }`;
-
   return (
     <div>
       <h1 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">
         Comparison
       </h1>
 
-      {/* ── Tabs ──────────────────────────────── */}
-      <div className="mb-6 flex gap-2">
-        <button className={tabButton(tab === 'monthly')} onClick={() => setTab('monthly')}>
-          Multi-Month
-        </button>
-        <button className={tabButton(tab === 'yearly')} onClick={() => setTab('yearly')}>
-          Yearly
-        </button>
-      </div>
-
-      {tab === 'monthly' ? (
-        <MonthlyView entries={entries} />
-      ) : (
-        <YearlyComparisonView />
-      )}    </div>
+      <MonthlyView entries={entries} />
+    </div>
   );
 }
 

@@ -32,6 +32,28 @@ export function BudgetCard({
     queryFn: () => budgetsApi.getSummary(budget.id),
   });
 
+  // ── Clone quick action (current card only) ──
+  // Clones this budget into the next month: projected (SOLL) amounts
+  // are copied, actual (IST) amounts start at zero.
+  const nextMonth = budget.month === 12 ? 1 : budget.month + 1;
+  const nextYear = budget.month === 12 ? budget.year + 1 : budget.year;
+  const nextTitle = formatMonthYear(nextMonth, nextYear);
+
+  const cloneMutation = useMutation({
+    mutationFn: () =>
+      budgetsApi.clone(budget.id, {
+        title: nextTitle,
+        month: nextMonth,
+        year: nextYear,
+      }),
+    onSuccess: (newBudget) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.budgets });
+      queryClient.invalidateQueries({ queryKey: queryKeys.comparison });
+      queryClient.invalidateQueries({ queryKey: queryKeys.yearlyComparison });
+      navigate(`/budgets/${newBudget.id}`);
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: () => budgetsApi.delete(budget.id),
     onSuccess: () => {
@@ -76,6 +98,19 @@ export function BudgetCard({
           <span className="text-sm text-gray-500 dark:text-gray-500">
             {formatMonthYear(budget.month, budget.year)}
           </span>
+          {isCurrent && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                cloneMutation.mutate();
+              }}
+              disabled={cloneMutation.isPending}
+              className="rounded px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950 disabled:opacity-50"
+              title={`Clone this budget into ${nextTitle} — projected amounts are copied, actual amounts start at zero`}
+            >
+              +
+            </button>
+          )}
           <button
             onClick={(e) => {
               e.stopPropagation();

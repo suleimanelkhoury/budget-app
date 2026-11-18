@@ -12,7 +12,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Bar,
   BarChart,
@@ -78,11 +78,6 @@ export function ChartsPage() {
       balance: toNumber(e.actual_balance),
       plannedBalance: toNumber(e.projected_balance),
     })) ?? [];
-
-  // Reset the drill-down when a different budget is selected
-  useEffect(() => {
-    setSelectedCategory(null);
-  }, [budgetId]);
 
   // ── Monthly tab data ─────────────────────────
   const { data: chartData, isLoading } = useQuery({
@@ -254,9 +249,12 @@ export function ChartsPage() {
               </label>
               <select
                 value={budgetId ?? ''}
-                onChange={(e) =>
-                  setSelectedBudgetId(parseInt(e.target.value))
-                }
+                onChange={(e) => {
+                  setSelectedBudgetId(parseInt(e.target.value));
+                  // Reset the drill-down when a different budget is
+                  // selected (the category belongs to the old budget)
+                  setSelectedCategory(null);
+                }}
                 className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
               >
                 {budgets.map((b) => (

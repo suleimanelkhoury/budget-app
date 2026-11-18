@@ -2,8 +2,8 @@
  * Layout — sidebar navigation + header + content area.
  *
  * Used as the wrapper for all authenticated pages. The sidebar provides
- * navigation between Dashboard, Charts, and Settings. The header shows
- * the app name and a logout button.
+ * navigation between Dashboard, Charts, Calculator, and Settings. The
+ * header shows the app name and a logout button.
  */
 
 import { useState } from 'react';
@@ -14,6 +14,7 @@ import { useTheme } from '../hooks/useTheme';
 const navItems = [
   { to: '/', label: 'Dashboard', icon: '📊' },
   { to: '/charts', label: 'Charts', icon: '📈' },
+  { to: '/calculator', label: 'Calculator', icon: '🧮' },
   { to: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 

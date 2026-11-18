@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { budgetsApi } from '../api';
 import { formatCurrency, formatMonthYear } from '../utils/format';
+import { toNumber } from '../utils/format';
 import { balanceColor } from '../utils/balance';
 import { queryKeys } from '../utils/queryKeys';
 import { ConfirmDialog } from './ConfirmDialog';
@@ -72,7 +73,7 @@ export function BudgetCard({
     mutationFn: () => budgetsApi.exportExcel(budget.id),
   });
 
-  const balance = summary ? parseFloat(summary.actual_balance) : 0;
+  const balance = summary ? toNumber(summary.actual_balance) : 0;
 
   return (
     <div

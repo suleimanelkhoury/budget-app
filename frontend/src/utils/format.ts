@@ -6,6 +6,19 @@
  */
 
 /**
+ * Parse a backend decimal string ("1234.56") to a number.
+ * Returns 0 for NaN so downstream arithmetic never poisons charts.
+ *
+ * @example
+ * toNumber("900.00")   // 900
+ * toNumber("n/a")      // 0
+ */
+export function toNumber(value: string | number): number {
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  return Number.isNaN(num) ? 0 : num;
+}
+
+/**
  * Format a number as a German currency string.
  *
  * @param value - The number or string to format (e.g. 1234.56 or "1234.56")
@@ -17,8 +30,7 @@
  * formatCurrency(-50.25)     // "-50,25 €"
  */
 export function formatCurrency(value: string | number): string {
-  const num = typeof value === 'string' ? parseFloat(value) : value;
-  if (isNaN(num)) return '0,00 €';
+  const num = toNumber(value);
 
   return new Intl.NumberFormat('de-DE', {
     style: 'currency',
@@ -39,6 +51,21 @@ export function formatMonthYear(month: number, year: number): string {
   return new Intl.DateTimeFormat('de-DE', {
     month: 'long',
     year: 'numeric',
+  }).format(date);
+}
+
+/**
+ * Format a month + year as a compact German axis label (for charts
+ * with many points).
+ *
+ * @example
+ * formatMonthShort(9, 2026)  // "Sep 26"
+ */
+export function formatMonthShort(month: number, year: number): string {
+  const date = new Date(year, month - 1, 1);
+  return new Intl.DateTimeFormat('de-DE', {
+    month: 'short',
+    year: '2-digit',
   }).format(date);
 }
 
@@ -65,7 +92,7 @@ export function formatDate(isoDate: string): string {
  * formatDifference("-30.00")  // "-30,00 €"
  */
 export function formatDifference(value: string | number): string {
-  const num = typeof value === 'string' ? parseFloat(value) : value;
+  const num = toNumber(value);
   const formatted = formatCurrency(num);
   return num > 0 ? `+${formatted}` : formatted;
 }

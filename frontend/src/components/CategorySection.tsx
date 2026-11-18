@@ -11,6 +11,7 @@ import { categoriesApi, expenseItemsApi } from '../api';
 import { invalidateBudgetData } from '../utils/queryKeys';
 import { balanceColor } from '../utils/balance';
 import { formatCurrency, formatDifference } from '../utils/format';
+import { toNumber } from '../utils/format';
 import { ExpenseItemRow } from './ExpenseItemRow';
 import type { Category } from '../types';
 
@@ -30,11 +31,11 @@ export function CategorySection({ category, budgetId }: CategorySectionProps) {
 
   // Calculate subtotal (Zwischensumme)
   const projectedSubtotal = category.items.reduce(
-    (sum, item) => sum + parseFloat(item.projected_cost),
+    (sum, item) => sum + toNumber(item.projected_cost),
     0,
   );
   const actualSubtotal = category.items.reduce(
-    (sum, item) => sum + parseFloat(item.actual_cost),
+    (sum, item) => sum + toNumber(item.actual_cost),
     0,
   );
   const difference = projectedSubtotal - actualSubtotal;

@@ -6,6 +6,7 @@
  */
 
 import { formatCurrency, formatDifference } from '../utils/format';
+import { toNumber } from '../utils/format';
 import { balanceColor } from '../utils/balance';
 import type { BudgetSummary } from '../types';
 
@@ -16,8 +17,8 @@ interface SummaryBarProps {
 export function SummaryBar({ summary }: SummaryBarProps) {
   if (!summary) return null;
 
-  const expenseDiff = parseFloat(summary.expense_difference);
-  const balanceDiff = parseFloat(summary.balance_difference);
+  const expenseDiff = toNumber(summary.expense_difference);
+  const balanceDiff = toNumber(summary.balance_difference);
 
   return (
     <div className="sticky bottom-0 z-30 border-t border-gray-300 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">

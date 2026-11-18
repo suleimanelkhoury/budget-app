@@ -6,6 +6,7 @@
  */
 
 import { formatCurrency } from '../utils/format';
+import { toNumber } from '../utils/format';
 
 interface DifferenceBadgeProps {
   /** The difference value as a string (e.g. "50.00" or "-30.00"). */
@@ -18,7 +19,7 @@ export function DifferenceBadge({
   value,
   showSign = true,
 }: DifferenceBadgeProps) {
-  const num = parseFloat(value);
+  const num = toNumber(value);
   const isPositive = num > 0;
   const isNegative = num < 0;
 

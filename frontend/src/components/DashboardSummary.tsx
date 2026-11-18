@@ -27,8 +27,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { budgetsApi } from '../api';
 import { balanceColor } from '../utils/balance';
-import { formatCurrency } from '../utils/format';
+import { formatCurrency, toNumber } from '../utils/format';
 import { queryKeys } from '../utils/queryKeys';
+import { pillButtonClass } from '../utils/ui';
 import { CategorySpendingModal } from './CategorySpendingModal';
 import type { BudgetComparisonEntry } from '../types';
 
@@ -91,8 +92,6 @@ export function DashboardSummary() {
     comparison?.budgets.filter((b) => b.year === activeYear) ?? [];
   if (entries.length === 0) return null;
 
-  const toNumber = (value: string) => parseFloat(value);
-
   // ── Raw money-flow sums ─────────────────────
   const ytdExpenses = entries.reduce(
     (sum, e) => sum + toNumber(e.total_actual_expenses),
@@ -123,13 +122,6 @@ export function DashboardSummary() {
   const ytdConsumption = ytdExpenses - invested;
   const avgConsumption = ytdConsumption / entries.length;
 
-  const pillButton = (active: boolean) =>
-    `rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-      active
-        ? 'bg-indigo-600 text-white'
-        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
-    }`;
-
   return (
     <div className="mb-6">
       {/* ── Year selector + category spending ──── */}
@@ -139,7 +131,7 @@ export function DashboardSummary() {
             key={year}
             type="button"
             onClick={() => setSelectedYear(year)}
-            className={pillButton(year === activeYear)}
+            className={pillButtonClass(year === activeYear)}
           >
             {year}
           </button>

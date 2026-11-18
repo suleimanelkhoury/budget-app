@@ -193,19 +193,20 @@ export function DashboardPage() {
 
       {/* ── Budget grid ───────────────────────── */}
       {archiveBudgets.length > 0 ? (
-        archiveYears.map((year) => {
-          const yearBudgets = archiveBudgets
-            .filter((b) => b.year === year)
-            .sort((a, b) => b.month - a.month); // newest month first
-          const collapsed = isCollapsed(year);
-          return (
-            <section key={year} className="mb-6">
-              <button
-                type="button"
-                onClick={() => toggleYear(year)}
-                aria-expanded={!collapsed}
-                className="mb-3 flex w-full items-center gap-2 text-left"
-              >
+        <div className="space-y-6">
+          {archiveYears.map((year) => {
+            const yearBudgets = archiveBudgets
+              .filter((b) => b.year === year)
+              .sort((a, b) => b.month - a.month); // newest month first
+            const collapsed = isCollapsed(year);
+            return (
+              <section key={year}>
+                <button
+                  type="button"
+                  onClick={() => toggleYear(year)}
+                  aria-expanded={!collapsed}
+                  className="mb-4 flex w-full items-center gap-2 text-left"
+                >
                 <span
                   className={`text-sm text-gray-500 transition-transform dark:text-gray-400 ${
                     collapsed ? '' : 'rotate-90'
@@ -233,8 +234,9 @@ export function DashboardPage() {
                 </div>
               )}
             </section>
-          );
-        })
+            );
+          })}
+        </div>
       ) : (
         <div className="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center dark:border-gray-700 dark:bg-gray-800">
           <p className="text-gray-500 dark:text-gray-500">

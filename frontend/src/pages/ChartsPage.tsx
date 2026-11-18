@@ -97,6 +97,13 @@ export function ChartsPage() {
       value: toNumber(c.actual),
     })) ?? [];
 
+  // Shared height for the monthly charts so the side-by-side cards
+  // align (the bar chart scales with the number of categories).
+  const chartHeight = Math.max(
+    350,
+    (chartData?.expenses_by_category.length ?? 0) * 34 + 60,
+  );
+
   const selectCategory = (name: string | undefined) => {
     if (!name) return;
     setSelectedCategory((prev) => (prev === name ? null : name));
@@ -270,13 +277,7 @@ export function ChartsPage() {
                   appear misattributed. Y-axis category names are
                   always unambiguous. */}
               <ChartContainer title="Expenses by Category (SOLL vs IST)">
-                <ResponsiveContainer
-                  width="100%"
-                  height={Math.max(
-                    350,
-                    chartData.expenses_by_category.length * 34 + 60,
-                  )}
-                >
+                <ResponsiveContainer width="100%" height={chartHeight}>
                   <BarChart
                     data={chartData.expenses_by_category}
                     layout="vertical"
@@ -320,7 +321,7 @@ export function ChartsPage() {
 
               {/* ── Pie chart: expense distribution ─── */}
               <ChartContainer title="Expense Distribution (IST)">
-                <ResponsiveContainer width="100%" height={350}>
+                <ResponsiveContainer width="100%" height={chartHeight}>
                   <PieChart>
                     <Pie
                       data={pieData}

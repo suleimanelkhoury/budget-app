@@ -1,6 +1,7 @@
 """Tests for the auth endpoint rate limiter (app/core/rate_limit.py)."""
 
 import pytest
+from redis.exceptions import RedisError
 
 from app.core.rate_limit import get_rate_limit_middleware
 from app.main import app
@@ -21,7 +22,6 @@ def limiter(client):
     yield middleware
     middleware.enabled = False
     middleware._hits.clear()
-
 
 class TestLoginRateLimit:
     """POST /api/auth/login allows 5 requests per minute per IP."""
@@ -107,3 +107,98 @@ class TestOtherEndpointsUnaffected:
         for _ in range(10):
             r = client.get("/api/auth/login")
             assert r.status_code == 405
+
+
+class _ExplodingRedis:
+    """Stub Redis client whose every operation raises (simulates an outage)."""
+
+    def pipeline(self, transaction=True):
+        raise RedisError("redis is down")
+
+
+@pytest.fixture()
+def redis_limiter(client, limiter):
+    """Same as `limiter`, but backed by a fresh fakeredis instance."""
+    import fakeredis.aioredis
+
+    limiter._redis = fakeredis.aioredis.FakeRedis()
+    yield limiter
+    limiter._redis = None
+
+
+class TestRedisBackend:
+    """The Redis backend enforces the same limits, globally."""
+
+    def test_allows_up_to_limit_then_429(self, client, redis_limiter):
+        payload = {"email": "nobody@test.com", "password": "wrong-password"}
+        for _ in range(5):
+            r = client.post("/api/auth/login", json=payload)
+            assert r.status_code == 401
+
+        r = client.post("/api/auth/login", json=payload)
+        assert r.status_code == 429
+        assert "retry-after" in {k.lower() for k in r.headers}
+
+    def test_429_uses_app_error_format(self, client, redis_limiter):
+        payload = {"email": "nobody@test.com", "password": "wrong-password"}
+        for _ in range(5):
+            client.post("/api/auth/login", json=payload)
+
+        r = client.post("/api/auth/login", json=payload)
+        body = r.json()
+        assert body["error"]["status_code"] == 429
+        assert body["error"]["path"] == "/api/auth/login"
+        assert body["error"]["method"] == "POST"
+
+    def test_register_limit_enforced(self, client, redis_limiter):
+        for _ in range(3):
+            r = client.post(
+                "/api/auth/register",
+                json={"email": f"ruser{_}@test.com", "password": "password123"},
+            )
+            assert r.status_code == 201
+
+        r = client.post(
+            "/api/auth/register",
+            json={"email": "ruser4@test.com", "password": "password123"},
+        )
+        assert r.status_code == 429
+
+    def test_retry_after_within_window(self, client, redis_limiter):
+        """Retry-After reflects the remaining fixed window, not an error."""
+        payload = {"email": "nobody@test.com", "password": "wrong-password"}
+        for _ in range(5):
+            client.post("/api/auth/login", json=payload)
+
+        r = client.post("/api/auth/login", json=payload)
+        retry_after = int(r.headers["Retry-After"])
+        assert 1 <= retry_after <= 60  # RATE_LIMIT_WINDOW_SECONDS
+
+    def test_other_ips_are_not_affected(self, client, redis_limiter):
+        payload = {"email": "nobody@test.com", "password": "wrong-password"}
+        for _ in range(5):
+            client.post("/api/auth/login", json=payload)
+
+        # A different client IP (via X-Forwarded-For) still gets through
+        r = client.post(
+            "/api/auth/login",
+            json=payload,
+            headers={"X-Forwarded-For": "203.0.113.77"},
+        )
+        assert r.status_code == 401
+
+
+class TestRedisFailOpen:
+    """A Redis outage must not lock users out of authentication."""
+
+    def test_redis_error_fails_open(self, client, limiter):
+        limiter._redis = _ExplodingRedis()
+        payload = {"email": "nobody@test.com", "password": "wrong-password"}
+        try:
+            # Way past the limit — every request still reaches the app
+            # (401 invalid credentials) instead of being rate limited.
+            for _ in range(10):
+                r = client.post("/api/auth/login", json=payload)
+                assert r.status_code == 401
+        finally:
+            limiter._redis = None

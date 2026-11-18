@@ -650,13 +650,23 @@ def _budget_fingerprint(
 
 
 def _existing_budget_fingerprints(
-    db: Session, user: User
+    db: Session, user: User, month: int, year: int
 ) -> dict[int, str]:
-    """Return {budget_id: fingerprint} for every budget belonging to `user`."""
+    """Return {budget_id: fingerprint} for candidate budgets of `user`.
+
+    The fingerprint includes the exact month and year, so an exact duplicate
+    necessarily has the same month/year. Pre-filtering on those keeps this
+    O(same-month budgets) instead of O(all budgets) — no need to load and
+    hash the user's entire history on every import.
+    """
     budgets = list(
         db.scalars(
             select(Budget)
-            .where(Budget.user_id == user.id)
+            .where(
+                Budget.user_id == user.id,
+                Budget.month == month,
+                Budget.year == year,
+            )
             .options(
                 # Eager-load categories/items/incomes so we can fingerprint them
                 selectinload(Budget.categories).selectinload(
@@ -736,7 +746,7 @@ def _assert_not_duplicate(
     """Raise ConflictError if a budget with identical content already exists."""
     incoming = _import_fingerprint(budget, incomes, categories)
     for _budget_id, existing in _existing_budget_fingerprints(
-        db, user
+        db, user, budget.month, budget.year
     ).items():
         if existing == incoming:
             raise ConflictError(

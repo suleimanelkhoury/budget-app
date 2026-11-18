@@ -2,7 +2,7 @@
 
 from datetime import UTC, datetime, timedelta
 
-from jose import jwt
+import jwt
 
 from app.core.config import settings
 from app.core.security import create_access_token

@@ -34,11 +34,17 @@ class Settings(BaseSettings):
 
     # ── Rate limiting (app/core/rate_limit.py) ─
     # Fixed-window limits per client IP, applied to the auth endpoints.
-    # Note: enforced per uvicorn worker (prod runs 4 workers).
+    # With RATE_LIMIT_REDIS_URL set, counters are global across workers.
+    # Otherwise they are per uvicorn worker (prod runs 4 workers).
     RATE_LIMIT_ENABLED: bool = True
     RATE_LIMIT_WINDOW_SECONDS: int = 60
     RATE_LIMIT_LOGIN_MAX: int = 5
     RATE_LIMIT_REGISTER_MAX: int = 3
+    # Optional Redis backend for cross-worker limits, e.g.
+    # redis://redis:6379/0. Empty = in-memory per-worker state.
+    # Redis errors fail open (requests allowed), so auth stays available
+    # during a Redis outage.
+    RATE_LIMIT_REDIS_URL: str = ""
 
     # ── Upload limits (Excel import) ───────────
     # Guards against memory exhaustion / DoS via oversized or

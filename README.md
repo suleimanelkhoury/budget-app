@@ -110,6 +110,7 @@ The production setup:
 - **Backend**: uvicorn with 4 workers, runs Alembic migrations on startup; refuses to start with a default/weak `SECRET_KEY` or wildcard CORS origins
 - **Frontend**: unprivileged nginx (port 8080 internally) serving the built static files, proxying `/api/` to the backend; bound to `127.0.0.1` on the host — all public traffic goes through Caddy
 - **Database**: PostgreSQL with a persistent volume, not exposed to the host
+- **Redis**: shared rate-limit counters so the auth limits hold globally across all backend workers (state is disposable — no persistent volume)
 - **Health checks**: backend and database have health checks configured
 
 #### Going live checklist
@@ -126,7 +127,7 @@ The production setup:
 
 - **Passwords**: bcrypt hashing; generic login errors; timing-equalized auth failure paths to prevent account enumeration
 - **Tokens**: short-lived JWTs (8h) with a `jti` revocation blocklist — `POST /api/auth/logout` invalidates the token server-side; tokens issued before revocation support are rejected
-- **Rate limiting**: fixed-window limits per client IP on `/api/auth/login` (5/min) and `/api/auth/register` (3/min), configurable via `RATE_LIMIT_*` env vars
+- **Rate limiting**: fixed-window limits per client IP on `/api/auth/login` (5/min) and `/api/auth/register` (3/min), configurable via `RATE_LIMIT_*` env vars. In production the counters live in Redis, so limits are global across all uvicorn workers; without a Redis URL the limiter falls back to per-worker in-memory state (fine for dev). Redis errors fail open — an outage never locks users out of authentication
 - **Excel import**: uploads capped at 5 MB (compressed) / 50 MB (decompressed) with zip-bomb detection and sheet-dimension limits
 - **API docs**: `/docs`, `/redoc`, and `/openapi.json` are only served when `DEBUG=true` (the dev default); they're hidden in production
 - **Containers**: backend and frontend run as non-root users

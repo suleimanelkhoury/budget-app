@@ -6,8 +6,9 @@
  *   trajectory) over time, with the SOLL plan as dashed lines
  *   (moved here from the former Comparison page).
  * - Monthly: single-budget charts — expenses by category (SOLL vs
- *   IST) and the expense distribution pie, with click-to-drill-down
- *   into a category's items and its 12-month trend.
+ *   IST), the expense distribution donut, and per-category variance
+ *   (SOLL − IST), with click-to-drill-down into a category's items
+ *   and its 12-month trend.
  */
 
 import { useQuery } from '@tanstack/react-query';
@@ -90,18 +91,33 @@ export function ChartsPage() {
     enabled: tab === 'monthly' && !!budgetId,
   });
 
-  // Prepare data for pie chart (actual expenses by category)
-  const pieData =
-    chartData?.expenses_by_category.map((c) => ({
-      name: c.label,
-      value: toNumber(c.actual),
-    })) ?? [];
+  // Only categories with any money attached — zero-value categories
+  // (empty SOLL and IST) just add empty rows to the bar chart and
+  // would distort the pie's percentages.
+  const activeCategories =
+    chartData?.expenses_by_category.filter(
+      (c) => toNumber(c.projected) > 0 || toNumber(c.actual) > 0,
+    ) ?? [];
+
+  // Prepare data for the pie chart (actual expenses by category)
+  const pieData = activeCategories
+    .map((c) => ({ name: c.label, value: toNumber(c.actual) }))
+    .filter((d) => d.value > 0);
+
+  // Variance per category: SOLL − IST (positive = under budget,
+  // negative = overspent), sorted best-to-worst.
+  const varianceData = activeCategories
+    .map((c) => ({
+      label: c.label,
+      variance: toNumber(c.projected) - toNumber(c.actual),
+    }))
+    .sort((a, b) => b.variance - a.variance);
 
   // Shared height for the monthly charts so the side-by-side cards
   // align (the bar chart scales with the number of categories).
   const chartHeight = Math.max(
     350,
-    (chartData?.expenses_by_category.length ?? 0) * 34 + 60,
+    activeCategories.length * 34 + 60,
   );
 
   const selectCategory = (name: string | undefined) => {
@@ -279,7 +295,7 @@ export function ChartsPage() {
               <ChartContainer title="Expenses by Category (SOLL vs IST)">
                 <ResponsiveContainer width="100%" height={chartHeight}>
                   <BarChart
-                    data={chartData.expenses_by_category}
+                    data={activeCategories}
                     layout="vertical"
                     margin={{ left: 8, right: 24 }}
                   >
@@ -320,6 +336,8 @@ export function ChartsPage() {
               </ChartContainer>
 
               {/* ── Pie chart: expense distribution ─── */}
+              {/* Donut style: percentages on the slices (values in the
+                  tooltip), hole keeps the visual weight light. */}
               <ChartContainer title="Expense Distribution (IST)">
                 <ResponsiveContainer width="100%" height={chartHeight}>
                   <PieChart>
@@ -329,8 +347,11 @@ export function ChartsPage() {
                       nameKey="name"
                       cx="50%"
                       cy="50%"
+                      innerRadius={55}
                       outerRadius={120}
-                      label={(entry) => `${entry.name}: ${entry.value}€`}
+                      label={(entry) =>
+                        `${Math.round((entry.percent ?? 0) * 100)}%`
+                      }
                       fontSize={11}
                       onClick={(entry) =>
                         selectCategory((entry as { name?: string })?.name)
@@ -346,9 +367,58 @@ export function ChartsPage() {
                     </Pie>
                     <Tooltip
                       formatter={(value) => formatCurrency(Number(value))}
+                      contentStyle={CHART_TOOLTIP_STYLE}
                     />
                     <Legend />
                   </PieChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+
+              {/* ── Variance chart: SOLL − IST per category ── */}
+              <ChartContainer
+                title="Category Variance (SOLL − IST · green = under budget, red = overspent)"
+                className="lg:col-span-2"
+              >
+                <ResponsiveContainer width="100%" height={chartHeight}>
+                  <BarChart
+                    data={varianceData}
+                    layout="vertical"
+                    margin={{ left: 8, right: 24 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis type="number" fontSize={12} />
+                    <YAxis
+                      type="category"
+                      dataKey="label"
+                      width={130}
+                      fontSize={12}
+                    />
+                    <Tooltip
+                      formatter={(value) => formatCurrency(Number(value))}
+                      contentStyle={CHART_TOOLTIP_STYLE}
+                    />
+                    <ReferenceLine x={0} stroke={SERIES_COLORS.Plan} />
+                    <Bar
+                      dataKey="variance"
+                      name="SOLL − IST"
+                      radius={[0, 4, 4, 0]}
+                      onClick={(data) =>
+                        selectCategory((data as { label?: string })?.label)
+                      }
+                      className="cursor-pointer"
+                    >
+                      {varianceData.map((entry) => (
+                        <Cell
+                          key={`variance-${entry.label}`}
+                          fill={
+                            entry.variance >= 0
+                              ? SERIES_COLORS.Actual
+                              : SERIES_COLORS.Expenses
+                          }
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
                 </ResponsiveContainer>
               </ChartContainer>
 

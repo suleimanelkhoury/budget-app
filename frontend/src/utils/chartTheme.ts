@@ -3,20 +3,26 @@
  * ChartsPage, DashboardSummary, and CategorySpendingModal.
  */
 
-/** Palette used to color pie slices (cycled). */
+/** Palette used to color pie slices (cycled).
+ *
+ * Deliberately disjoint from SERIES_COLORS: the pie legend sits next to
+ * the SOLL/IST bar legend on the Monthly tab, and identical colors in
+ * both (e.g. indigo #6366f1 = SOLL *and* a category) made the legends
+ * look like one shared mapping.
+ */
 export const PIE_COLORS = [
-  '#6366f1',
-  '#10b981',
-  '#f59e0b',
-  '#ef4444',
-  '#8b5cf6',
-  '#ec4899',
-  '#14b8a6',
-  '#f97316',
-  '#3b82f6',
   '#a855f7',
-  '#22c55e',
+  '#ec4899',
+  '#f97316',
+  '#06b6d4',
+  '#84cc16',
   '#eab308',
+  '#8b5cf6',
+  '#d946ef',
+  '#3b82f6',
+  '#0ea5e9',
+  '#78716c',
+  '#64748b',
 ];
 
 /** Named series colors (stat cards + line charts). */

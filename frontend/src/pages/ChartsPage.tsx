@@ -97,17 +97,31 @@ export function ChartsPage() {
       {chartData && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* ── Bar chart: expenses by category ─── */}
+          {/* Horizontal layout: with ~12 categories, rotated x-axis
+              labels visually shift one bar to the left (Recharts
+              rotation + auto-hidden ticks), making bars appear
+              misattributed. Y-axis category names are always
+              unambiguous. */}
           <ChartContainer title="Expenses by Category (SOLL vs IST)">
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={chartData.expenses_by_category}>
-                <XAxis
+            <ResponsiveContainer
+              width="100%"
+              height={Math.max(
+                350,
+                chartData.expenses_by_category.length * 34 + 60,
+              )}
+            >
+              <BarChart
+                data={chartData.expenses_by_category}
+                layout="vertical"
+                margin={{ left: 8, right: 24 }}
+              >
+                <XAxis type="number" fontSize={12} />
+                <YAxis
+                  type="category"
                   dataKey="label"
-                  angle={-20}
-                  textAnchor="end"
-                  height={70}
+                  width={130}
                   fontSize={12}
                 />
-                <YAxis fontSize={12} />
                 <Tooltip
                   formatter={(value) => formatCurrency(Number(value))}
                   contentStyle={CHART_TOOLTIP_STYLE}
@@ -117,13 +131,13 @@ export function ChartsPage() {
                   dataKey="projected"
                   name="SOLL"
                   fill={SERIES_COLORS.Projected}
-                  radius={[4, 4, 0, 0]}
+                  radius={[0, 4, 4, 0]}
                 />
                 <Bar
                   dataKey="actual"
                   name="IST"
                   fill={SERIES_COLORS.Actual}
-                  radius={[4, 4, 0, 0]}
+                  radius={[0, 4, 4, 0]}
                 />
               </BarChart>
             </ResponsiveContainer>

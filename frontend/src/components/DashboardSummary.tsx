@@ -1,27 +1,30 @@
 /**
- * DashboardSummary — stat strips above the budget grid.
+ * DashboardSummary — stat strips above the budget grid, with a year
+ * selector so the numbers can be viewed for any year with budgets.
  *
- * Row 1: year-to-date money-flow overview. "Expenses" tiles show
- * consumption only (investments excluded — see the Investing row).
+ * Row 1: money-flow overview for the selected year. "Expenses" tiles
+ * show consumption only (investments excluded — see the Investing row).
  *
- * Row 2: investing — total invested YTD, monthly average, and the
- * investing rate (share of new income that went into investments).
+ * Row 2: investing — total invested in the selected year, monthly
+ * average, and the investing rate (share of new income that went into
+ * investments).
  *
  * Note on the money model: each month's remaining balance is carried
  * into the next month as its SOLL Extra, so monthly balances and Extra
  * income must NOT be summed across months (the same money would be
  * counted repeatedly). Instead:
  *
- *   - YTD Income       = YTD expenses + current balance − January
- *                        carryover (new money in = money out + pile
- *                        growth; "expenses" includes investing)
- *   - Current Balance  = the latest month's IST balance
+ *   - Overall Income        = overall expenses + end-of-year balance
+ *                             − January carryover (new money in =
+ *                             money out + pile growth; "expenses"
+ *                             includes investing)
+ *   - End-of-Year Balance   = the latest month's IST balance in the year
  *
- * Renders nothing while loading or when no budgets exist for the
- * current year.
+ * Renders nothing while loading or when no budgets exist.
  */
 
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { budgetsApi } from '../api';
 import { balanceColor } from '../utils/balance';
 import { formatCurrency } from '../utils/format';
@@ -56,7 +59,10 @@ function StatTile({ label, value, valueClassName, title }: StatTileProps) {
 }
 
 export function DashboardSummary() {
-  const year = new Date().getFullYear();
+  const currentYear = new Date().getFullYear();
+  // null = automatic: current year if it has budgets, else the newest
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+
   const { data: comparison, isLoading: comparisonLoading } = useQuery({
     queryKey: queryKeys.comparison,
     queryFn: budgetsApi.compare,
@@ -68,10 +74,19 @@ export function DashboardSummary() {
 
   if (comparisonLoading || yearlyLoading) return null;
 
-  // Entries are sorted by (year, month) ascending — filter to this year
-  // and keep that order.
+  const availableYears = [
+    ...new Set(comparison?.budgets.map((b) => b.year) ?? []),
+  ].sort((a, b) => b - a); // newest first
+  if (availableYears.length === 0) return null;
+
+  const activeYear =
+    selectedYear ??
+    (availableYears.includes(currentYear) ? currentYear : availableYears[0]);
+
+  // Entries are sorted by (year, month) ascending — filter to the
+  // selected year and keep that order.
   const entries: BudgetComparisonEntry[] =
-    comparison?.budgets.filter((b) => b.year === year) ?? [];
+    comparison?.budgets.filter((b) => b.year === activeYear) ?? [];
   if (entries.length === 0) return null;
 
   const toNumber = (value: string) => parseFloat(value);
@@ -95,8 +110,8 @@ export function DashboardSummary() {
   // ── Investing ───────────────────────────────
   // invested is already computed per year by the backend (sum of the
   // Investitionen category's actual costs).
-  const currentYearEntry = yearly?.years.find((y) => y.year === year);
-  const invested = currentYearEntry ? toNumber(currentYearEntry.invested) : 0;
+  const yearEntry = yearly?.years.find((y) => y.year === activeYear);
+  const invested = yearEntry ? toNumber(yearEntry.invested) : 0;
   const avgInvested = invested / entries.length;
   // Share of new income that went into investments. On average this is
   // the same per month, so one rate covers both views.
@@ -106,17 +121,40 @@ export function DashboardSummary() {
   const ytdConsumption = ytdExpenses - invested;
   const avgConsumption = ytdConsumption / entries.length;
 
+  const pillButton = (active: boolean) =>
+    `rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+      active
+        ? 'bg-indigo-600 text-white'
+        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+    }`;
+
   return (
     <div className="mb-6">
+      {/* ── Year selector ───────────────────────── */}
+      {availableYears.length > 1 && (
+        <div className="mb-4 flex flex-wrap gap-2">
+          {availableYears.map((year) => (
+            <button
+              key={year}
+              type="button"
+              onClick={() => setSelectedYear(year)}
+              className={pillButton(year === activeYear)}
+            >
+              {year}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* ── Row 1: money-flow overview ──────────── */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <StatTile
-          label="YTD Income"
+          label="Overall Income"
           value={formatCurrency(ytdIncome)}
-          title={`New money this year, carryover excluded:\nYTD expenses + current balance − January carryover (${formatCurrency(startCarryover)})`}
+          title={`New money in ${activeYear}, carryover excluded:\nOverall expenses + end-of-year balance − January carryover (${formatCurrency(startCarryover)})`}
         />
         <StatTile
-          label="YTD Expenses (w/o investing)"
+          label="Overall Expenses (w/o investing)"
           value={formatCurrency(ytdConsumption)}
           title={`Consumption only — excludes ${formatCurrency(
             invested,
@@ -127,10 +165,10 @@ export function DashboardSummary() {
           value={formatCurrency(avgConsumption)}
           title={`Average consumption across ${entries.length} budget${
             entries.length === 1 ? '' : 's'
-          } in ${year} — investments excluded`}
+          } in ${activeYear} — investments excluded`}
         />
         <StatTile
-          label="Current Balance"
+          label="End-of-Year Balance"
           value={formatCurrency(currentBalance)}
           valueClassName={balanceColor(currentBalance)}
           title={`Remaining cash as of ${latest.title}`}
@@ -140,25 +178,27 @@ export function DashboardSummary() {
       {/* ── Row 2: investing ────────────────────── */}
       <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3">
         <StatTile
-          label="YTD Invested"
+          label="Overall Invested"
           value={formatCurrency(invested)}
           valueClassName="text-emerald-600 dark:text-emerald-400"
-          title={`Total transferred into investments (Investitionen category) in ${year}`}
+          title={`Total transferred into investments (Investitionen category) in ${activeYear}`}
         />
         <StatTile
           label="Avg. Monthly Investing"
           value={formatCurrency(avgInvested)}
           title={`Average across ${entries.length} budget${
             entries.length === 1 ? '' : 's'
-          } in ${year}`}
+          } in ${activeYear}`}
         />
         <StatTile
           label="Investing Rate"
           value={investingRate === null ? '—' : `${investingRate.toFixed(1)} %`}
           valueClassName={
-            investingRate === null ? undefined : 'text-emerald-600 dark:text-emerald-400'
+            investingRate === null
+              ? undefined
+              : 'text-emerald-600 dark:text-emerald-400'
           }
-          title={`Invested ÷ YTD income (new money, carryover excluded). On average the same for every month.`}
+          title={`Invested ÷ overall income (new money, carryover excluded). On average the same for every month.`}
         />
       </div>
     </div>

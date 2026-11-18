@@ -6,7 +6,6 @@ import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { BudgetDetailPage } from './pages/BudgetDetailPage';
 import { ChartsPage } from './pages/ChartsPage';
-import { ComparisonPage } from './pages/ComparisonPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
@@ -39,7 +38,6 @@ function App() {
                   <Route path="/" element={<DashboardPage />} />
                   <Route path="/budgets/:id" element={<BudgetDetailPage />} />
                   <Route path="/charts" element={<ChartsPage />} />
-                  <Route path="/compare" element={<ComparisonPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
                 </Route>
               </Route>

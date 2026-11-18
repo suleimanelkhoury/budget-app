@@ -14,7 +14,6 @@ import { useTheme } from '../hooks/useTheme';
 const navItems = [
   { to: '/', label: 'Dashboard', icon: '📊' },
   { to: '/charts', label: 'Charts', icon: '📈' },
-  { to: '/compare', label: 'Comparison', icon: '📅' },
   { to: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 

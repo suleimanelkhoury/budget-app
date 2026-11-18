@@ -1,7 +1,7 @@
 /**
  * Balance/difference color helper — green for non-negative, red for negative.
  *
- * Shared by BudgetCard, CategorySection, SummaryBar, and ComparisonPage,
+ * Shared by BudgetCard, CategorySection, SummaryBar, and ChartsPage,
  * which previously repeated the same Tailwind class ternaries.
  */
 

@@ -153,8 +153,11 @@ def register_exception_handlers(app: FastAPI) -> None:
             "database_error",
             path=request.url.path,
             method=request.method,
-            error=str(exc),
-            exc_info=True,
+            # Only the exception class — str(exc) can contain SQL with
+            # bound parameter values (user data) which must not leak
+            # into logs, and exc_info would include str(exc) as the
+            # traceback's final line.
+            error_type=type(exc).__name__,
         )
         return _error_response(request, status.HTTP_500_INTERNAL_SERVER_ERROR, message)
 
@@ -172,7 +175,9 @@ def register_exception_handlers(app: FastAPI) -> None:
             "unhandled_exception",
             path=request.url.path,
             method=request.method,
-            error=str(exc),
-            exc_info=True,
+            # Only the exception class — the message may contain
+            # user-supplied input, and exc_info would include it as the
+            # traceback's final line.
+            error_type=type(exc).__name__,
         )
         return _error_response(request, status.HTTP_500_INTERNAL_SERVER_ERROR, message)

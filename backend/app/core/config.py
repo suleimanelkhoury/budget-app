@@ -94,3 +94,12 @@ def validate_security_settings() -> None:
             "characters). Generate a strong key with:\n"
             "  python -c \"import secrets; print(secrets.token_urlsafe(32))\""
         )
+
+    if "*" in settings.BACKEND_CORS_ORIGINS:
+        # With allow_credentials=True, starlette echoes back any request
+        # origin when "*" is configured — letting any website make
+        # credentialed requests to the API.
+        raise RuntimeError(
+            "BACKEND_CORS_ORIGINS must not contain \"*\". List the exact "
+            "frontend origins instead, e.g. [\"https://budget.example.com\"]."
+        )

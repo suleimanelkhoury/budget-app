@@ -26,6 +26,8 @@ ignore = [
 
 [lint.per-file-ignores]
 "tests/*" = ["S101"]  # allow assert in tests
+# conftest must set RATE_LIMIT_ENABLED before importing the app
+"tests/conftest.py" = ["E402"]
 # FastAPI uses Depends() in argument defaults by design
 "app/api/*.py" = ["B008"]
 "app/core/deps.py" = ["B008"]

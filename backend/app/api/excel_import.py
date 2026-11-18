@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends, File, UploadFile, status
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.core.exceptions import BadRequestError, ConflictError
@@ -31,20 +32,48 @@ async def import_budget(
     - Category headers (Wohnen, Transport, Essen, etc.)
     - Expense items under each category with SOLL/IST columns
     """
-    # Validate file type
+    # Validate file type — only .xlsx is supported (openpyxl cannot
+    # parse the legacy .xls binary format anyway).
     if not file.filename:
         raise BadRequestError(
             detail_en="No filename provided.",
             detail_de="Kein Dateiname angegeben.",
         )
-    if not file.filename.lower().endswith((".xlsx", ".xls")):
+    if not file.filename.lower().endswith(".xlsx"):
         raise BadRequestError(
-            detail_en="File must be an Excel file (.xlsx or .xls).",
-            detail_de="Die Datei muss eine Excel-Datei sein (.xlsx oder .xls).",
+            detail_en="File must be an Excel file (.xlsx).",
+            detail_de="Die Datei muss eine Excel-Datei (.xlsx) sein.",
         )
 
-    # Read file contents
-    file_bytes = await file.read()
+    # Reject oversized uploads before reading them into memory.
+    # starlette populates UploadFile.size while parsing the multipart
+    # body; the capped read below also covers a missing/unknown size.
+    if file.size is not None and file.size > settings.MAX_UPLOAD_BYTES:
+        raise BadRequestError(
+            detail_en=(
+                "File is too large "
+                f"(maximum {settings.MAX_UPLOAD_BYTES // (1024 * 1024)} MB)."
+            ),
+            detail_de=(
+                "Die Datei ist zu groß "
+                f"(maximal {settings.MAX_UPLOAD_BYTES // (1024 * 1024)} MB)."
+            ),
+        )
+
+    # Read at most MAX_UPLOAD_BYTES + 1 bytes so the request can never
+    # pull more than the limit into memory.
+    file_bytes = await file.read(settings.MAX_UPLOAD_BYTES + 1)
+    if len(file_bytes) > settings.MAX_UPLOAD_BYTES:
+        raise BadRequestError(
+            detail_en=(
+                "File is too large "
+                f"(maximum {settings.MAX_UPLOAD_BYTES // (1024 * 1024)} MB)."
+            ),
+            detail_de=(
+                "Die Datei ist zu groß "
+                f"(maximal {settings.MAX_UPLOAD_BYTES // (1024 * 1024)} MB)."
+            ),
+        )
     if not file_bytes:
         raise BadRequestError(
             detail_en="Uploaded file is empty.",

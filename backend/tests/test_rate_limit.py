@@ -66,10 +66,10 @@ class TestRegisterRateLimit:
     """POST /api/auth/register allows 3 requests per minute per IP."""
 
     def test_allows_up_to_limit_then_429(self, client, limiter):
-        for i in range(3):
+        for _ in range(3):
             r = client.post(
                 "/api/auth/register",
-                json={"email": f"user{i}@test.com", "password": "password123"},
+                json={"email": f"user{_}@test.com", "password": "password123"},
             )
             assert r.status_code == 201
 
@@ -80,7 +80,7 @@ class TestRegisterRateLimit:
         assert r.status_code == 429
 
     def test_failed_registrations_count_toward_limit(self, client, limiter):
-        for i in range(3):
+        for _ in range(3):
             client.post(
                 "/api/auth/register",
                 json={"email": "taken@test.com", "password": "password123"},

@@ -20,11 +20,13 @@ three columns) as a fallback.
 from decimal import Decimal, InvalidOperation
 from hashlib import sha256
 from io import BytesIO
+from zipfile import BadZipFile, ZipFile
 
 from openpyxl import load_workbook
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.config import settings
 from app.core.exceptions import ConflictError
 from app.models.budget import Budget
 from app.models.category import Category
@@ -317,6 +319,36 @@ def _parse_income_from_template(
     return list(income_map.values())
 
 
+def _validate_zip_safety(file_bytes: bytes) -> None:
+    """Reject files whose decompressed content is too large (zip bombs).
+
+    An .xlsx file is a zip archive; a few compressed kilobytes can expand
+    to gigabytes when opened. Inspect the central directory (cheap — no
+    decompression happens) before hand-off to openpyxl.
+
+    Raises:
+        ValueError: If the file is not a zip archive or exceeds the
+            configured uncompressed-size / entry-count limits.
+    """
+    try:
+        with ZipFile(BytesIO(file_bytes)) as zf:
+            infos = zf.infolist()
+            if len(infos) > settings.MAX_ZIP_ENTRIES:
+                raise ValueError(
+                    "Excel file contains too many archive entries "
+                    f"({len(infos)}; maximum {settings.MAX_ZIP_ENTRIES})."
+                )
+            total_uncompressed = sum(info.file_size for info in infos)
+            if total_uncompressed > settings.MAX_UNCOMPRESSED_BYTES:
+                raise ValueError(
+                    "Excel file is too large when decompressed "
+                    f"({total_uncompressed // (1024 * 1024)} MB; maximum "
+                    f"{settings.MAX_UNCOMPRESSED_BYTES // (1024 * 1024)} MB)."
+                )
+    except BadZipFile as exc:
+        raise ValueError(f"Not a valid .xlsx file: {exc}") from exc
+
+
 def parse_excel_and_create_budget(
     file_bytes: bytes,
     user: User,
@@ -335,6 +367,8 @@ def parse_excel_and_create_budget(
     Raises:
         ValueError: If the file cannot be parsed or has no valid data.
     """
+    _validate_zip_safety(file_bytes)
+
     try:
         wb = load_workbook(BytesIO(file_bytes), data_only=True)
     except Exception as exc:
@@ -358,6 +392,20 @@ def parse_excel_and_create_budget(
         raise ValueError("Excel file has no worksheets.")
 
     max_row = ws.max_row or 0
+    max_column = ws.max_column or 0
+
+    # Cap the sheet dimensions before iterating — a huge sheet would tie
+    # up a worker for minutes even with a size-limited upload.
+    if max_row > settings.MAX_EXCEL_ROWS:
+        raise ValueError(
+            f"Excel file has too many rows ({max_row}; maximum "
+            f"{settings.MAX_EXCEL_ROWS})."
+        )
+    if max_column > settings.MAX_EXCEL_COLUMNS:
+        raise ValueError(
+            f"Excel file has too many columns ({max_column}; maximum "
+            f"{settings.MAX_EXCEL_COLUMNS})."
+        )
 
     # ── Detect the budget title ───────────────
     # The template puts the title in B2 (e.g. "JANUAR 2026 BUDGET").

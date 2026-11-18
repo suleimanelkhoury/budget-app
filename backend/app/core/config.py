@@ -38,6 +38,17 @@ class Settings(BaseSettings):
     RATE_LIMIT_LOGIN_MAX: int = 5
     RATE_LIMIT_REGISTER_MAX: int = 3
 
+    # ── Upload limits (Excel import) ───────────
+    # Guards against memory exhaustion / DoS via oversized or
+    # decompression-bomb .xlsx files.
+    MAX_UPLOAD_BYTES: int = 5 * 1024 * 1024  # 5 MB compressed .xlsx
+    # Decompressed zip content — an .xlsx is a zip archive, and a small
+    # file can expand enormously (zip bomb).
+    MAX_UNCOMPRESSED_BYTES: int = 50 * 1024 * 1024  # 50 MB
+    MAX_ZIP_ENTRIES: int = 200  # a valid .xlsx has well under 50 entries
+    MAX_EXCEL_ROWS: int = 10_000
+    MAX_EXCEL_COLUMNS: int = 100
+
 
 # The well-known dev default — must never be used in production.
 INSECURE_DEFAULT_SECRET_KEY = "change-me-in-production"

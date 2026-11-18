@@ -40,6 +40,9 @@ export function BudgetCard({
       // summary query because this card actively observes it (removing
       // an observed query triggers a refetch → 404).
       queryClient.invalidateQueries({ queryKey: queryKeys.budgets });
+      // The comparison strips aggregate budget data — refresh them too
+      queryClient.invalidateQueries({ queryKey: queryKeys.comparison });
+      queryClient.invalidateQueries({ queryKey: queryKeys.yearlyComparison });
     },
   });
 

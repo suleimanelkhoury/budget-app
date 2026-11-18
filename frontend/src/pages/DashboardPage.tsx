@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { budgetsApi } from '../api';
 import { BudgetCard } from '../components/BudgetCard';
+import { DashboardSummary } from '../components/DashboardSummary';
 import { ExcelImportModal } from '../components/ExcelImportModal';
 import { Spinner } from '../components/Spinner';
 import { emptyBudgetDraft } from '../utils/budgetForm';
@@ -31,6 +32,8 @@ export function DashboardPage() {
     mutationFn: budgetsApi.create,
     onSuccess: (budget) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.budgets });
+      queryClient.invalidateQueries({ queryKey: queryKeys.comparison });
+      queryClient.invalidateQueries({ queryKey: queryKeys.yearlyComparison });
       setShowCreateForm(false);
       setNewBudget(emptyBudgetDraft());
       navigate(`/budgets/${budget.id}`);
@@ -44,6 +47,8 @@ export function DashboardPage() {
 
   const handleImportSuccess = (budgetId: number) => {
     queryClient.invalidateQueries({ queryKey: queryKeys.budgets });
+    queryClient.invalidateQueries({ queryKey: queryKeys.comparison });
+    queryClient.invalidateQueries({ queryKey: queryKeys.yearlyComparison });
     setShowImportModal(false);
     navigate(`/budgets/${budgetId}`);
   };
@@ -168,6 +173,9 @@ export function DashboardPage() {
           </form>
         </div>
       )}
+
+      {/* ── Year-to-date summary strip ─────────── */}
+      <DashboardSummary />
 
       {/* ── Budget grid ───────────────────────── */}
       {orderedBudgets.length > 0 ? (

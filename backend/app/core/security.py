@@ -1,5 +1,6 @@
 """Security utilities — password hashing and JWT token handling."""
 
+import secrets
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -21,6 +22,26 @@ def hash_password(password: str) -> str:
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a plaintext password against a bcrypt hash."""
     return pwd_context.verify(plain_password, hashed_password)
+
+
+# Throwaway hash for timing equalization (see verify_dummy_password).
+# Generated once at import; the plaintext is discarded immediately.
+# bcrypt verify always runs the full cost, so checking against this
+# costs the same as a real password check.
+_dummy_password_hash = hash_password(secrets.token_urlsafe(16))
+
+
+def verify_dummy_password(plain_password: str) -> None:
+    """Verify a password against a throwaway hash and discard the result.
+
+    Used on authentication failure paths (unknown email on login,
+    duplicate email on registration) so those responses take the same
+    time as requests against real accounts. Without this, response
+    timing would reveal whether an email is registered — bcrypt only
+    runs for existing users, making "fast 401" a reliable account
+    enumeration oracle.
+    """
+    verify_password(plain_password, _dummy_password_hash)
 
 
 # ── JWT token handling ────────────────────────

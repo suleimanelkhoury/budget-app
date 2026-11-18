@@ -7,7 +7,12 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.core.exceptions import ConflictError
-from app.core.security import create_access_token, hash_password, verify_password
+from app.core.security import (
+    create_access_token,
+    hash_password,
+    verify_dummy_password,
+    verify_password,
+)
 from app.models.user import User
 from app.schemas.auth import Token, UserCreate, UserLogin, UserResponse
 
@@ -28,6 +33,12 @@ def register(
     # Check if email is already registered
     existing = db.scalar(select(User).where(User.email == user_in.email))
     if existing is not None:
+        # Burn time comparable to a real registration (bcrypt hashing)
+        # so response timing can't be used to probe which emails exist.
+        # The 409 itself stays — hiding account existence fully would
+        # require an email-verification flow; the register rate limit
+        # caps how fast this signal can be polled.
+        hash_password(user_in.password)
         raise ConflictError(
             detail_en="A user with this email already exists.",
             detail_de="Ein Benutzer mit dieser E-Mail-Adresse existiert bereits.",
@@ -61,7 +72,19 @@ def login(
 ) -> Token:
     """Authenticate a user with email + password and return a JWT token."""
     user = db.scalar(select(User).where(User.email == user_in.email))
-    if user is None or not verify_password(user_in.password, user.password_hash):
+    if user is None:
+        # Burn bcrypt time so the response takes as long as a real
+        # login — otherwise "fast 401" reveals the email is unknown.
+        verify_dummy_password(user_in.password)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "en": "Incorrect email or password.",
+                "de": "Falsche E-Mail oder Passwort.",
+            },
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if not verify_password(user_in.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={

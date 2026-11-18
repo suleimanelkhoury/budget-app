@@ -15,6 +15,7 @@ import {
   Legend,
   Line,
   LineChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -87,25 +88,30 @@ export function ComparisonPage() {
         <MonthlyView entries={entries} />
       ) : (
         <YearlyComparisonView />
-      )}
-    </div>
+      )}    </div>
   );
 }
 
 /** Multi-month view — line charts and per-month table. */
 function MonthlyView({ entries }: { entries: ComparisonEntry[] }) {
-  // Shape data for Recharts: one row per budget, labeled "Mon YYYY"
+  // Shape data for Recharts: one row per budget, labeled "Mon YYYY".
+  // Income is the total (Gehalt + Extra) — Extra often contains the
+  // previous month's carryover plus additional income, so showing only
+  // Gehalt would understate income in months with big carryovers.
   const chartData = entries.map((e) => ({
     label: formatMonthYear(e.month, e.year),
-    gehalt: parseFloat(e.total_actual_gehalt),
+    income:
+      parseFloat(e.total_actual_gehalt) + parseFloat(e.total_actual_extra),
     expenses: parseFloat(e.total_actual_expenses),
+    plannedExpenses: parseFloat(e.total_projected_expenses),
     balance: parseFloat(e.actual_balance),
+    plannedBalance: parseFloat(e.projected_balance),
   }));
 
   return (
     <div className="grid grid-cols-1 gap-6">
-      {/* ── Gehalt vs Expenses over time ─────── */}
-      <ChartContainer title="Gehalt vs Expenses (IST)">
+      {/* ── Income vs Expenses over time ─────── */}
+      <ChartContainer title="Income vs Expenses (IST, plan dashed)">
         <ResponsiveContainer width="100%" height={350}>
           <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -118,26 +124,39 @@ function MonthlyView({ entries }: { entries: ComparisonEntry[] }) {
             <Legend />
             <Line
               type="monotone"
-              dataKey="gehalt"
-              name="Gehalt"
-              stroke={SERIES_COLORS.Gehalt}
+              dataKey="income"
+              name="Income (Gehalt + Extra)"
+              stroke={SERIES_COLORS.Income}
               strokeWidth={2}
               dot={{ r: 4 }}
             />
             <Line
               type="monotone"
               dataKey="expenses"
-              name="Expenses"
+              name="Expenses (actual)"
               stroke={SERIES_COLORS.Expenses}
               strokeWidth={2}
               dot={{ r: 4 }}
+            />
+            <Line
+              type="monotone"
+              dataKey="plannedExpenses"
+              name="Expenses (plan)"
+              stroke={SERIES_COLORS.Plan}
+              strokeWidth={2}
+              strokeDasharray="6 3"
+              dot={false}
             />
           </LineChart>
         </ResponsiveContainer>
       </ChartContainer>
 
       {/* ── Balance over time ────────────────── */}
-      <ChartContainer title="Balance Over Time (IST)">
+      {/* Note: with the carryover model (each month's balance becomes
+          next month's SOLL Extra), the balance IS the cumulative cash
+          pile — this line already is the savings trajectory. The
+          dashed plan line shows how the SOLL forecast tracked it. */}
+      <ChartContainer title="Cash Balance Over Time (savings trajectory, plan dashed)">
         <ResponsiveContainer width="100%" height={350}>
           <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -148,13 +167,23 @@ function MonthlyView({ entries }: { entries: ComparisonEntry[] }) {
               contentStyle={CHART_TOOLTIP_STYLE}
             />
             <Legend />
+            <ReferenceLine y={0} stroke="#9ca3af" strokeDasharray="4 4" />
             <Line
               type="monotone"
               dataKey="balance"
-              name="IST Balance"
+              name="Balance (actual)"
               stroke={SERIES_COLORS.Balance}
               strokeWidth={2}
               dot={{ r: 4 }}
+            />
+            <Line
+              type="monotone"
+              dataKey="plannedBalance"
+              name="Balance (plan)"
+              stroke={SERIES_COLORS.Plan}
+              strokeWidth={2}
+              strokeDasharray="6 3"
+              dot={false}
             />
           </LineChart>
         </ResponsiveContainer>
@@ -213,6 +242,8 @@ type ComparisonEntry = {
   year: number;
   total_actual_gehalt: string;
   total_actual_extra: string;
+  total_projected_expenses: string;
   total_actual_expenses: string;
+  projected_balance: string;
   actual_balance: string;
 };

@@ -22,12 +22,14 @@ export const PIE_COLORS = [
 /** Named series colors (stat cards + line charts). */
 export const SERIES_COLORS = {
   Gehalt: '#10b981',
+  Income: '#10b981',
   Extra: '#f59e0b',
   Expenses: '#ef4444',
   Balance: '#14b8a6',
   Invested: '#6366f1',
   Projected: '#6366f1',
   Actual: '#10b981',
+  Plan: '#9ca3af',
 };
 
 /** Consistent tooltip styling for all charts. */

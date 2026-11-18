@@ -76,8 +76,9 @@ services:
         condition: service_healthy
     # Only reachable from the host itself (for smoke tests via curl).
     # All public traffic goes through the Caddy TLS proxy below.
+    # The nginx container runs unprivileged and listens on 8080.
     ports:
-      - "127.0.0.1:${FRONTEND_PORT:-3000}:80"
+      - "127.0.0.1:${FRONTEND_PORT:-3000}:8080"
     # nginx proxies /api/ to the backend service (see nginx.conf)
 
   # ── TLS termination (Caddy, automatic HTTPS) ──

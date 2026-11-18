@@ -9,5 +9,5 @@
 # serves plain HTTP — only for local testing, never in production.
 
 {$SITE_ADDRESS} {
-	reverse_proxy frontend:80
+	reverse_proxy frontend:8080
 }

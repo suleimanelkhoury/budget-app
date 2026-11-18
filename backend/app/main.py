@@ -39,9 +39,13 @@ app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     lifespan=lifespan,
-    docs_url="/docs",
-    redoc_url="/redoc",
-    openapi_url=f"{settings.API_V1_PREFIX}/openapi.json",
+    # Interactive API docs are a dev tool — don't advertise the API
+    # surface on a production deployment.
+    docs_url="/docs" if settings.DEBUG else None,
+    redoc_url="/redoc" if settings.DEBUG else None,
+    openapi_url=(
+        f"{settings.API_V1_PREFIX}/openapi.json" if settings.DEBUG else None
+    ),
 )
 
 # Register global exception handlers

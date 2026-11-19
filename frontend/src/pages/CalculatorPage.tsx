@@ -192,7 +192,7 @@ export function CalculatorPage() {
             setSelectedRow('');
             setNewRowCategoryId('');
           }}
-          className="w-full max-w-sm rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+          className="w-full max-w-sm rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
         >
           {(budgets ?? []).map((b) => (
             <option key={b.id} value={b.id}>
@@ -344,7 +344,7 @@ function BudgetOverview({
   return (
     <div className="space-y-4">
       {/* ── Incomes ───────────────────────────── */}
-      <section className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+      <section className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
           Income
         </h2>
@@ -378,7 +378,7 @@ function BudgetOverview({
                           }
                         }}
                         onBlur={cancelRename}
-                        className="min-w-0 flex-1 rounded-lg border border-indigo-400 px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none dark:bg-gray-900 dark:text-gray-100"
+                        className="min-w-0 flex-1 rounded-lg border border-brand-400 px-2 py-1.5 text-sm focus:border-brand-500 focus:outline-none dark:bg-gray-900 dark:text-gray-100"
                       />
                       <span className="text-right text-sm">
                         <span className="font-semibold text-gray-900 dark:text-gray-100">
@@ -404,16 +404,16 @@ function BudgetOverview({
                           startRename('income', income.id, income.label)
                         }
                         title="Click to select — double-click to rename"
-                        className={`flex flex-1 items-baseline justify-between rounded-lg px-2 py-1.5 text-sm transition-colors ${
+                        className={`flex flex-1 items-baseline justify-between rounded-lg px-2 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
                           isSelected
-                            ? 'bg-indigo-100 ring-1 ring-indigo-400 dark:bg-indigo-900/50 dark:ring-indigo-500'
+                            ? 'bg-brand-100 ring-1 ring-brand-400 dark:bg-brand-900/50 dark:ring-brand-500'
                             : 'hover:bg-gray-100 dark:hover:bg-gray-700'
                         }`}
                       >
                         <span
                           className={`text-left ${
                             isSelected
-                              ? 'font-semibold text-indigo-700 dark:text-indigo-200'
+                              ? 'font-semibold text-brand-700 dark:text-brand-200'
                               : 'text-gray-900 dark:text-gray-100'
                           }`}
                         >
@@ -423,7 +423,7 @@ function BudgetOverview({
                           <span
                             className={`font-semibold ${
                               isSelected
-                                ? 'text-indigo-700 dark:text-indigo-200'
+                                ? 'text-brand-700 dark:text-brand-200'
                                 : 'text-gray-900 dark:text-gray-100'
                             }`}
                           >
@@ -543,9 +543,9 @@ function CategoryOverviewCard({
 }) {
   return (
     <section
-      className={`rounded-xl border bg-white p-4 dark:bg-gray-800 ${
+      className={`rounded-2xl border bg-white p-4 dark:bg-gray-800 ${
         isPendingNewTarget
-          ? 'border-indigo-400 ring-1 ring-indigo-400 dark:border-indigo-500'
+          ? 'border-brand-400 ring-1 ring-brand-400 dark:border-brand-500'
           : 'border-gray-200 dark:border-gray-700'
       }`}
     >
@@ -557,7 +557,7 @@ function CategoryOverviewCard({
           type="button"
           onClick={() => onAddRow(category.id)}
           title={`Add a row to ${category.name}`}
-          className="rounded-lg bg-indigo-50 px-2 py-0.5 text-sm font-semibold leading-5 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-900/40 dark:text-indigo-300 dark:hover:bg-indigo-900/60"
+          className="rounded-lg bg-brand-50 px-2 py-0.5 text-sm font-semibold leading-5 text-brand-600 hover:bg-brand-100 dark:bg-brand-900/40 dark:text-brand-300 dark:hover:bg-brand-900/60"
         >
           ＋
         </button>
@@ -591,7 +591,7 @@ function CategoryOverviewCard({
                         }
                       }}
                       onBlur={onRenameCancel}
-                      className="min-w-0 flex-1 rounded-lg border border-indigo-400 px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none dark:bg-gray-900 dark:text-gray-100"
+                      className="min-w-0 flex-1 rounded-lg border border-brand-400 px-2 py-1.5 text-sm focus:border-brand-500 focus:outline-none dark:bg-gray-900 dark:text-gray-100"
                     />
                     <span className="text-right text-sm">
                       <span className="font-semibold text-gray-900 dark:text-gray-100">
@@ -614,16 +614,16 @@ function CategoryOverviewCard({
                       onClick={() => onSelectItem(rowId)}
                       onDoubleClick={() => onRenameStart(item)}
                       title="Click to select — double-click to rename"
-                      className={`flex flex-1 items-baseline justify-between rounded-lg px-2 py-1.5 text-sm transition-colors ${
+                      className={`flex flex-1 items-baseline justify-between rounded-lg px-2 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
                         isSelected
-                          ? 'bg-indigo-100 ring-1 ring-indigo-400 dark:bg-indigo-900/50 dark:ring-indigo-500'
+                          ? 'bg-brand-100 ring-1 ring-brand-400 dark:bg-brand-900/50 dark:ring-brand-500'
                           : 'hover:bg-gray-100 dark:hover:bg-gray-700'
                       }`}
                     >
                       <span
                         className={`text-left ${
                           isSelected
-                            ? 'font-semibold text-indigo-700 dark:text-indigo-200'
+                            ? 'font-semibold text-brand-700 dark:text-brand-200'
                             : 'text-gray-900 dark:text-gray-100'
                         }`}
                       >
@@ -633,7 +633,7 @@ function CategoryOverviewCard({
                         <span
                           className={`font-semibold ${
                             isSelected
-                              ? 'text-indigo-700 dark:text-indigo-200'
+                              ? 'text-brand-700 dark:text-brand-200'
                               : 'text-gray-900 dark:text-gray-100'
                           }`}
                         >
@@ -679,7 +679,7 @@ function CategoryOverviewCard({
             }
           }}
           placeholder="Row name, e.g. Lidl — Enter creates it"
-          className="mt-2 w-full rounded-lg border border-indigo-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none dark:border-indigo-700 dark:bg-gray-900 dark:text-gray-100"
+          className="mt-2 w-full rounded-lg border border-brand-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-brand-700 dark:bg-gray-900 dark:text-gray-100"
         />
       )}
     </section>
@@ -1084,23 +1084,23 @@ function CalculatorPanel({
 
   const calcButtonClass = (variant: 'num' | 'op' | 'clear' | 'equals') => {
     const base =
-      'rounded-lg py-3 text-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed';
+      'rounded-xl py-3 text-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:opacity-40 disabled:cursor-not-allowed';
     switch (variant) {
       case 'op':
-        return `${base} bg-gray-100 text-indigo-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-indigo-300 dark:hover:bg-gray-600`;
+        return `${base} bg-gray-100 text-brand-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-brand-300 dark:hover:bg-gray-600`;
       case 'clear':
         return `${base} bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50`;
       case 'equals':
-        return `${base} bg-indigo-600 text-white hover:bg-indigo-700`;
+        return `${base} bg-brand-600 text-white hover:bg-brand-700`;
       default:
         return `${base} bg-white text-gray-900 border border-gray-300 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700 dark:hover:bg-gray-700`;
     }
   };
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+    <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
       {/* ── Calculator display ────────────────── */}
-      <div className="mt-3 rounded-xl bg-gray-900 px-3 py-2.5 text-right dark:bg-gray-950">
+      <div className="mt-3 rounded-2xl bg-gray-900 px-3 py-2.5 text-right dark:bg-gray-950">
         <div className="flex items-center justify-between">
           {/* IST/SOLL tag — click to toggle which value is edited */}
           <button
@@ -1167,7 +1167,7 @@ function CalculatorPanel({
             setError(null);
           }}
           title="Round the applied amount up to the next full euro (14.51 → 15.00, 3.00 → 4.00)"
-          className={`rounded-lg py-3 text-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+          className={`rounded-xl py-3 text-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
             roundUp
               ? 'bg-emerald-600 text-white hover:bg-emerald-700'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'

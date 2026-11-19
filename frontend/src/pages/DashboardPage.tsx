@@ -6,16 +6,24 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { budgetsApi } from '../api';
 import { BudgetCard } from '../components/BudgetCard';
 import { DashboardSummary } from '../components/DashboardSummary';
-import { ExcelImportModal } from '../components/ExcelImportModal';
 import { Spinner } from '../components/Spinner';
 import { emptyBudgetDraft } from '../utils/budgetForm';
 import { queryKeys } from '../utils/queryKeys';
 import { neutralButtonClass } from '../utils/ui';
+import { UploadIcon } from '../components/Icons';
+
+// Lazy: SheetJS (xlsx) is ~380 kB and only needed once the user
+// actually opens the import dialog.
+const ExcelImportModal = lazy(() =>
+  import('../components/ExcelImportModal').then((m) => ({
+    default: m.ExcelImportModal,
+  })),
+);
 
 export function DashboardPage() {
   const navigate = useNavigate();
@@ -98,13 +106,13 @@ export function DashboardPage() {
         <div className="flex gap-3">
           <button
             onClick={() => setShowImportModal(true)}
-            className={neutralButtonClass}
+            className={`${neutralButtonClass} inline-flex items-center gap-2`}
           >
-            📥 Import Excel
+            <UploadIcon size={14} /> Import Excel
           </button>
           <button
             onClick={() => setShowCreateForm(true)}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
+            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-700"
           >
             + New Budget
           </button>
@@ -113,7 +121,7 @@ export function DashboardPage() {
 
       {/* ── Create budget form ────────────────── */}
       {showCreateForm && (
-        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
             Create New Budget
           </h2>
@@ -130,7 +138,7 @@ export function DashboardPage() {
                 }
                 placeholder="e.g. Juli 2026"
                 required
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
               />
             </div>
             <div>
@@ -145,7 +153,7 @@ export function DashboardPage() {
                     month: parseInt(e.target.value),
                   })
                 }
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
               >
                 {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
                   <option key={m} value={m}>
@@ -166,14 +174,14 @@ export function DashboardPage() {
                 }
                 min="2000"
                 max="2100"
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
               />
             </div>
             <div className="flex items-end gap-2">
               <button
                 type="submit"
                 disabled={createMutation.isPending}
-                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
+                className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-700 disabled:opacity-50"
               >
                 {createMutation.isPending ? 'Creating…' : 'Create'}
               </button>
@@ -239,7 +247,7 @@ export function DashboardPage() {
           })}
         </div>
       ) : (
-        <div className="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center dark:border-gray-700 dark:bg-gray-800">
           <p className="text-gray-500 dark:text-gray-500">
             No budgets yet. Create a new budget or import from Excel to get
             started.
@@ -248,11 +256,13 @@ export function DashboardPage() {
       )}
 
       {/* ── Import modal ──────────────────────── */}
-      <ExcelImportModal
-        isOpen={showImportModal}
-        onClose={() => setShowImportModal(false)}
-        onSuccess={handleImportSuccess}
-      />
+      <Suspense fallback={null}>
+        <ExcelImportModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onSuccess={handleImportSuccess}
+        />
+      </Suspense>
     </div>
   );
 }

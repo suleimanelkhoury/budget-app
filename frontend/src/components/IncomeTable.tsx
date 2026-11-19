@@ -11,6 +11,7 @@ import { invalidateBudgetData } from '../utils/queryKeys';
 import { DifferenceBadge } from './DifferenceBadge';
 import { EditableCell } from './EditableCell';
 import type { Income } from '../types';
+import { Trash2Icon } from './Icons';
 
 interface IncomeTableProps {
   budgetId: number;
@@ -45,21 +46,19 @@ export function IncomeTable({ budgetId, incomes }: IncomeTableProps) {
   });
 
   return (
-    <div className="mb-6 rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      <div className="border-b border-gray-200 px-5 py-3 dark:border-gray-700">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Income / Einkommen
-        </h2>
-      </div>
+    <section className="mb-6">
+      <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
+        Income / Einkommen
+      </h2>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[500px]">
           <thead>
             <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:border-gray-700 dark:text-gray-500">
-              <th className="px-5 py-2">Label</th>
-              <th className="px-5 py-2 text-right">SOLL (Projected)</th>
-              <th className="px-5 py-2 text-right">IST (Actual)</th>
-              <th className="px-5 py-2 text-right">Difference</th>
-              <th className="px-5 py-2"></th>
+              <th className="py-2 pl-0 pr-4">Label</th>
+              <th className="py-2 pr-4 text-right">SOLL (Projected)</th>
+              <th className="py-2 pr-4 text-right">IST (Actual)</th>
+              <th className="py-2 pr-4 text-right">Difference</th>
+              <th className="py-2"></th>
             </tr>
           </thead>
           <tbody>
@@ -68,7 +67,7 @@ export function IncomeTable({ budgetId, incomes }: IncomeTableProps) {
                 key={income.id}
                 className="border-b border-gray-100 last:border-0 dark:border-gray-700"
               >
-                <td className="px-5 py-2">
+                <td className="py-2 pl-0 pr-4">
                   <EditableCell
                     value={income.label}
                     onSave={(v) =>
@@ -79,7 +78,7 @@ export function IncomeTable({ budgetId, incomes }: IncomeTableProps) {
                     }
                   />
                 </td>
-                <td className="px-5 py-2 text-right">
+                <td className="py-2 pr-4 text-right">
                   <EditableCell
                     value={income.projected_amount}
                     type="number"
@@ -91,7 +90,7 @@ export function IncomeTable({ budgetId, incomes }: IncomeTableProps) {
                     }
                   />
                 </td>
-                <td className="px-5 py-2 text-right">
+                <td className="py-2 pr-4 text-right">
                   <EditableCell
                     value={income.actual_amount}
                     type="number"
@@ -103,16 +102,16 @@ export function IncomeTable({ budgetId, incomes }: IncomeTableProps) {
                     }
                   />
                 </td>
-                <td className="px-5 py-2 text-right">
+                <td className="py-2 pr-4 text-right">
                   <DifferenceBadge value={income.difference} />
                 </td>
-                <td className="px-5 py-2 text-right">
+                <td className="py-2 pr-4 text-right">
                   <button
                     onClick={() => deleteMutation.mutate(income.id)}
                     className="text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400"
                     title="Delete"
                   >
-                    🗑
+                    <Trash2Icon size={16} />
                   </button>
                 </td>
               </tr>
@@ -121,7 +120,7 @@ export function IncomeTable({ budgetId, incomes }: IncomeTableProps) {
               <tr>
                 <td
                   colSpan={5}
-                  className="px-5 py-4 text-center text-sm text-gray-400 dark:text-gray-500"
+                  className="py-4 pl-0 text-center text-sm text-gray-400 dark:text-gray-500"
                 >
                   No income entries yet.
                 </td>
@@ -130,6 +129,6 @@ export function IncomeTable({ budgetId, incomes }: IncomeTableProps) {
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
   );
 }

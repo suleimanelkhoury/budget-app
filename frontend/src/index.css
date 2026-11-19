@@ -1,12 +1,115 @@
 @import 'tailwindcss';
 
+/* ── Brand palette ──────────────────────────── */
+/* Terracotta Clay — a warm, handmade-feeling primary that avoids the
+   default AI/Tailwind indigo *and* the common teal alternative.
+   ⚠ sits near the red "expenses" color in hue — if primary actions
+   start feeling "expensive", swap in another scale here. Swapping this
+   block re-themes the whole app (buttons, pills, rings, badges). */
+@theme {
+  --color-brand-50: #fdf5f2;
+  --color-brand-100: #fbe8e0;
+  --color-brand-200: #f5cdbd;
+  --color-brand-300: #ecab93;
+  --color-brand-400: #e08264;
+  --color-brand-500: #d15f3d;
+  --color-brand-600: #b8492c;
+  --color-brand-700: #993a24;
+  --color-brand-800: #7c3220;
+  --color-brand-900: #662d1e;
+  --color-brand-950: #37130c;
+
+  /* Warm charcoal grays — overrides Tailwind's cool (blue-tinted) gray
+     default so dark mode harmonizes with the terracotta brand. Same
+     hue family as brand-950, heavily desaturated. Overriding the
+     default scale keeps every gray utility working — light mode just
+     gains a subtle warm undertone. */
+  --color-gray-50: #faf9f8;
+  --color-gray-100: #f3f1ef;
+  --color-gray-200: #e6e2df;
+  --color-gray-300: #d0c9c5;
+  --color-gray-400: #a99e99;
+  --color-gray-500: #8a7f79;
+  --color-gray-600: #6f635e;
+  --color-gray-700: #584b47;
+  --color-gray-800: #3c322e;
+  --color-gray-900: #2b2320;
+  --color-gray-950: #1a1411;
+
+  /* Font pairing: IBM Plex Sans for the UI (banking heritage, simple),
+     IBM Plex Mono as the money accent — brand name, calculator display
+     and anything receipt-like. Plex numerals are tabular, so amounts
+     align. */
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, 'Segoe UI', Roboto,
+    sans-serif;
+  --font-display: 'IBM Plex Mono', ui-monospace, 'Courier New', monospace;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'Courier New', monospace;
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/ibmplexmono-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/ibmplexmono-500.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/ibmplexmono-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/ibmplexmono-700.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/ibmplexsans-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/ibmplexsans-500.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/ibmplexsans-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/ibmplexsans-700.woff2') format('woff2');
+}
+
 /* Enable class-based dark mode (Tailwind v4) */
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ── Global styles ──────────────────────────── */
 
 :root {
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'IBM Plex Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;
   font-weight: 400;
   color-scheme: light;
@@ -14,6 +117,8 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Amounts align vertically across rows and columns */
+  font-variant-numeric: tabular-nums;
 }
 
 body {
@@ -34,6 +139,28 @@ body {
 }
 .top-item-bar {
   transition: opacity 150ms ease;
+}
+
+/* ── Chart legibility in dark mode ───────────
+   Recharts hardcodes light-theme grays for axis tick text, axis lines
+   and pie labels, and legend text gets an inline color style (hence
+   !important). Text is lifted to the body-text level (gray-100),
+   structural axis lines to gray-300.
+   Class names are Recharts 3.9's: the tick text element is
+   .recharts-cartesian-axis-tick-value (the .recharts-cartesian-axis-
+   tick group only holds the tick line). */
+.dark .recharts-cartesian-axis-tick-value,
+.dark .recharts-cartesian-axis-tick-label text {
+  fill: #f3f1ef !important;
+}
+.dark .recharts-cartesian-axis-line {
+  stroke: #d0c9c5;
+}
+.dark .recharts-legend-item-text {
+  color: #f3f1ef !important;
+}
+.dark .recharts-pie-label-text {
+  fill: #f3f1ef !important;
 }
 .top-item-bar:hover {
   opacity: 0.8;

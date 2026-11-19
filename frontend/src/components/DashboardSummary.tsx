@@ -30,8 +30,17 @@ import { balanceColor } from '../utils/balance';
 import { formatCurrency, toNumber } from '../utils/format';
 import { queryKeys } from '../utils/queryKeys';
 import { neutralButtonClass, pillButtonClass } from '../utils/ui';
-import { CategorySpendingModal } from './CategorySpendingModal';
+import { lazy, Suspense } from 'react';
+// Lazy: the modal is the only reason the dashboard pulls in Recharts
+// (~370 kB chunk). Loading it on first open keeps the initial
+// dashboard chunk small.
+const CategorySpendingModal = lazy(() =>
+  import('./CategorySpendingModal').then((m) => ({
+    default: m.CategorySpendingModal,
+  })),
+);
 import type { BudgetComparisonEntry } from '../types';
+import { ChartPieIcon } from './Icons';
 
 interface StatTileProps {
   label: string;
@@ -43,7 +52,7 @@ interface StatTileProps {
 function StatTile({ label, value, valueClassName, title }: StatTileProps) {
   return (
     <div
-      className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+      className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
       title={title}
     >
       <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-500">
@@ -142,10 +151,10 @@ export function DashboardSummary() {
         <button
           type="button"
           onClick={() => setShowCategorySpending(true)}
-          className={neutralButtonClass}
+          className={`${neutralButtonClass} inline-flex items-center gap-2`}
           title={`Actual spending per category in ${activeYear}`}
         >
-          📊 Category Spending
+          <ChartPieIcon size={14} /> Category Spending
         </button>
       </div>
 
@@ -183,7 +192,7 @@ export function DashboardSummary() {
         <StatTile
           label="Overall Invested"
           value={formatCurrency(invested)}
-          valueClassName="text-emerald-600 dark:text-emerald-400"
+          valueClassName="text-teal-600 dark:text-teal-400"
           title={`Total transferred into investments (Investitionen category) in ${activeYear}`}
         />
         <StatTile
@@ -199,7 +208,7 @@ export function DashboardSummary() {
           valueClassName={
             investingRate === null
               ? undefined
-              : 'text-emerald-600 dark:text-emerald-400'
+              : 'text-teal-600 dark:text-teal-400'
           }
           title={`Invested ÷ overall income (new money, carryover excluded). On average the same for every month.`}
         />
@@ -207,10 +216,12 @@ export function DashboardSummary() {
 
       {/* ── Category spending popup ─────────────── */}
       {showCategorySpending && (
-        <CategorySpendingModal
-          year={activeYear}
-          onClose={() => setShowCategorySpending(false)}
-        />
+        <Suspense fallback={null}>
+          <CategorySpendingModal
+            year={activeYear}
+            onClose={() => setShowCategorySpending(false)}
+          />
+        </Suspense>
       )}
     </div>
   );

@@ -10,6 +10,7 @@ import { invalidateBudgetData } from '../utils/queryKeys';
 import { DifferenceBadge } from './DifferenceBadge';
 import { EditableCell } from './EditableCell';
 import type { ExpenseItem } from '../types';
+import { Trash2Icon } from './Icons';
 
 interface ExpenseItemRowProps {
   item: ExpenseItem;
@@ -82,7 +83,7 @@ export function ExpenseItemRow({ item, budgetId }: ExpenseItemRowProps) {
           className="text-gray-400 hover:text-red-600"
           title="Delete"
         >
-          🗑
+          <Trash2Icon size={16} />
         </button>
       </td>
     </tr>

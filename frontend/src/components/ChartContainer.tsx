@@ -19,7 +19,7 @@ export function ChartContainer({
 }: ChartContainerProps) {
   return (
     <div
-      className={`rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 ${className}`}
+      className={`rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 ${className}`}
     >
       <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-white">
         {title}

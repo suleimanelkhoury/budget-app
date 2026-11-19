@@ -15,6 +15,7 @@ import { balanceColor } from '../utils/balance';
 import { queryKeys } from '../utils/queryKeys';
 import { ConfirmDialog } from './ConfirmDialog';
 import type { Budget } from '../types';
+import { DownloadIcon, Trash2Icon } from './Icons';
 
 export function BudgetCard({
   budget,
@@ -78,9 +79,9 @@ export function BudgetCard({
   return (
     <div
       onClick={() => navigate(`/budgets/${budget.id}`)}
-      className={`cursor-pointer rounded-xl border bg-white p-5 shadow-sm transition-colors hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 ${
+      className={`cursor-pointer rounded-2xl border bg-white p-5 shadow-sm transition-colors hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 ${
         isCurrent
-          ? 'border-indigo-400 ring-1 ring-indigo-400 dark:border-indigo-500 dark:ring-indigo-500'
+          ? 'border-brand-400 ring-1 ring-brand-400 dark:border-brand-500 dark:ring-brand-500'
           : 'border-gray-200 dark:border-gray-700'
       }`}
     >
@@ -90,7 +91,7 @@ export function BudgetCard({
             {budget.title}
           </h3>
           {isCurrent && (
-            <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">
+            <span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700 dark:bg-brand-900 dark:text-brand-300">
               Current
             </span>
           )}
@@ -106,7 +107,7 @@ export function BudgetCard({
                 cloneMutation.mutate();
               }}
               disabled={cloneMutation.isPending}
-              className="rounded px-2 py-1 text-xs font-medium text-indigo-600 transition-colors hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950 disabled:opacity-50"
+              className="rounded-md px-2 py-1 text-xs font-medium text-brand-600 transition-colors hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-950 disabled:opacity-50"
               title={`Clone this budget into ${nextTitle} — projected amounts are copied, actual amounts start at zero`}
             >
               +
@@ -118,22 +119,22 @@ export function BudgetCard({
               exportMutation.mutate();
             }}
             disabled={exportMutation.isPending}
-            className="rounded p-1 text-gray-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-950 dark:hover:text-indigo-400 disabled:opacity-50"
+            className="rounded-md p-1 text-gray-400 transition-colors hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950 dark:hover:text-brand-400 disabled:opacity-50"
             title="Export budget to Excel"
             aria-label={`Export budget ${budget.title} to Excel`}
           >
-            ⬇️
+            <DownloadIcon size={16} />
           </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
               setShowDeleteConfirm(true);
             }}
-            className="rounded p-1 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950 dark:hover:text-red-400"
+            className="rounded-md p-1 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950 dark:hover:text-red-400"
             title="Delete budget"
             aria-label={`Delete budget ${budget.title}`}
           >
-            🗑
+            <Trash2Icon size={16} />
           </button>
         </div>
       </div>

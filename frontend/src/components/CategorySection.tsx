@@ -14,6 +14,7 @@ import { formatCurrency, formatDifference } from '../utils/format';
 import { toNumber } from '../utils/format';
 import { ExpenseItemRow } from './ExpenseItemRow';
 import type { Category } from '../types';
+import { Trash2Icon } from './Icons';
 
 interface CategorySectionProps {
   category: Category;
@@ -66,7 +67,7 @@ export function CategorySection({ category, budgetId }: CategorySectionProps) {
   };
 
   return (
-    <div className="mb-4 rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+    <div className="mb-4 rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
       {/* ── Category header ───────────────────── */}
       <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3 dark:border-gray-700">
         <h3 className="text-base font-semibold text-gray-900 dark:text-white">
@@ -84,7 +85,7 @@ export function CategorySection({ category, budgetId }: CategorySectionProps) {
             className="text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400"
             title="Delete category"
           >
-            🗑
+            <Trash2Icon size={16} />
           </button>
         </div>
       </div>
@@ -101,7 +102,7 @@ export function CategorySection({ category, budgetId }: CategorySectionProps) {
             onChange={(e) => setNewItem({ ...newItem, label: e.target.value })}
             placeholder="Item name"
             required
-            className="flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+            className="flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
           />
           <input
             type="number"
@@ -111,7 +112,7 @@ export function CategorySection({ category, budgetId }: CategorySectionProps) {
             }
             placeholder="SOLL"
             step="0.01"
-            className="w-24 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+            className="w-24 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
           />
           <input
             type="number"
@@ -121,12 +122,12 @@ export function CategorySection({ category, budgetId }: CategorySectionProps) {
             }
             placeholder="IST"
             step="0.01"
-            className="w-24 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+            className="w-24 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
           />
           <button
             type="submit"
             disabled={addItemMutation.isPending}
-            className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+            className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
           >
             Add
           </button>

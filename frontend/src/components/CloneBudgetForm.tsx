@@ -57,7 +57,7 @@ export function CloneBudgetForm({
         e.preventDefault();
         cloneMutation.mutate();
       }}
-      className="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+      className="mb-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
     >
       <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
         Clone Budget for a New Month
@@ -78,7 +78,7 @@ export function CloneBudgetForm({
               setCloneData({ ...cloneData, title: e.target.value })
             }
             required
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
           />
         </div>
         <div>
@@ -97,7 +97,7 @@ export function CloneBudgetForm({
               })
             }
             required
-            className="w-20 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+            className="w-20 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
           />
         </div>
         <div>
@@ -116,7 +116,7 @@ export function CloneBudgetForm({
               })
             }
             required
-            className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+            className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
           />
         </div>
         <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
@@ -135,7 +135,7 @@ export function CloneBudgetForm({
         <button
           type="submit"
           disabled={cloneMutation.isPending}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+          className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
         >
           {cloneMutation.isPending ? 'Cloning…' : 'Clone Budget'}
         </button>

@@ -72,7 +72,7 @@ export function RegisterPage() {
               <input
                 {...register('email')}
                 type="email"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                 placeholder="you@example.com"
               />
               {errors.email && (
@@ -89,7 +89,7 @@ export function RegisterPage() {
               <input
                 {...register('password')}
                 type="password"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                 placeholder="At least 8 characters"
               />
               {errors.password && (
@@ -106,7 +106,7 @@ export function RegisterPage() {
               <input
                 {...register('confirmPassword')}
                 type="password"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                 placeholder="Re-enter your password"
               />
               {errors.confirmPassword && (
@@ -119,7 +119,7 @@ export function RegisterPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+              className="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
             >
               {isSubmitting ? 'Creating account…' : 'Register'}
             </button>
@@ -129,7 +129,7 @@ export function RegisterPage() {
             Already have an account?{' '}
             <Link
               to="/login"
-              className="font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+              className="font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
             >
               Log in
             </Link>

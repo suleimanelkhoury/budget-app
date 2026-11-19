@@ -125,7 +125,7 @@ export function ExcelImportModal({
           <>
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="mb-4 cursor-pointer rounded-lg border-2 border-dashed border-gray-300 p-8 text-center hover:border-indigo-400 dark:border-gray-700 dark:hover:border-indigo-500"
+              className="mb-4 cursor-pointer rounded-lg border-2 border-dashed border-gray-300 p-8 text-center hover:border-brand-400 dark:border-gray-700 dark:hover:border-brand-500"
             >
               <input
                 ref={fileInputRef}
@@ -245,7 +245,7 @@ export function ExcelImportModal({
               <button
                 onClick={handleUpload}
                 disabled={isUploading}
-                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
               >
                 {isUploading ? 'Uploading…' : 'Confirm Import'}
               </button>

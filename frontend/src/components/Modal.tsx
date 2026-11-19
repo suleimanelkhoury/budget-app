@@ -2,12 +2,13 @@
  * Modal — shared popup shell used by all dialogs in the app.
  *
  * Provides the overlay, close-on-backdrop-click, close-on-Escape, the
- * header row (title + ✕ button), and the scrollable panel. Content is
+ * header row (title + close button), and the scrollable panel. Content is
  * passed as children.
  */
 
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { XIcon } from './Icons';
 
 interface ModalProps {
   title: string;
@@ -15,7 +16,7 @@ interface ModalProps {
   children: ReactNode;
   /** Panel width class, e.g. 'max-w-lg' (default) or 'max-w-2xl'. */
   widthClassName?: string;
-  /** Hide the ✕ button (e.g. when the content provides its own buttons). */
+  /** Hide the close button (e.g. when the content provides its own buttons). */
   closeButton?: boolean;
 }
 
@@ -41,7 +42,7 @@ export function Modal({
       onClick={onClose}
     >
       <div
-        className={`max-h-[85vh] w-full overflow-y-auto rounded-xl bg-white p-5 shadow-xl dark:bg-gray-800 ${widthClassName}`}
+        className={`max-h-[85vh] w-full overflow-y-auto rounded-2xl bg-white p-5 shadow-xl dark:bg-gray-800 ${widthClassName}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
@@ -55,7 +56,7 @@ export function Modal({
               className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
               aria-label="Close dialog"
             >
-              ✕
+              <XIcon size={16} />
             </button>
           )}
         </div>

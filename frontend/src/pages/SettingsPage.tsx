@@ -24,8 +24,8 @@ export function SettingsPage() {
         Settings
       </h1>
 
-      {/* ── Profile section ───────────────────── */}
-      <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+      {/* ── Profile ───────────────────────────── */}
+      <section className="mb-8">
         <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
           Profile
         </h2>
@@ -47,21 +47,25 @@ export function SettingsPage() {
             </p>
           </div>
         </div>
-      </div>
+      </section>
+
+      <hr className="mb-8 border-gray-200 dark:border-gray-700" />
 
       {/* ── Change password (placeholder) ─────── */}
-      <div className="mb-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+      <section className="mb-8">
         <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
           Change Password
         </h2>
         <p className="text-sm text-gray-500 dark:text-gray-500">
           Password change functionality will be available in a future update.
         </p>
-      </div>
+      </section>
+
+      <hr className="mb-8 border-gray-200 dark:border-gray-700" />
 
       {/* ── Danger zone ───────────────────────── */}
-      <div className="rounded-xl border border-red-200 bg-white p-6 shadow-sm dark:border-red-900 dark:bg-gray-800">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+      <section>
+        <h2 className="mb-4 text-lg font-semibold text-red-600 dark:text-red-400">
           Logout
         </h2>
         <p className="mb-4 text-sm text-gray-500 dark:text-gray-500">
@@ -73,7 +77,7 @@ export function SettingsPage() {
         >
           Logout
         </button>
-      </div>
+      </section>
     </div>
   );
 }

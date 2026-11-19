@@ -64,7 +64,7 @@ export function LoginPage() {
               <input
                 {...register('email')}
                 type="email"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                 placeholder="you@example.com"
               />
               {errors.email && (
@@ -81,7 +81,7 @@ export function LoginPage() {
               <input
                 {...register('password')}
                 type="password"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                 placeholder="••••••••"
               />
               {errors.password && (
@@ -94,7 +94,7 @@ export function LoginPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+              className="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
             >
               {isSubmitting ? 'Logging in…' : 'Log in'}
             </button>
@@ -104,7 +104,7 @@ export function LoginPage() {
             Don&apos;t have an account?{' '}
             <Link
               to="/register"
-              className="font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+              className="font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
             >
               Register
             </Link>

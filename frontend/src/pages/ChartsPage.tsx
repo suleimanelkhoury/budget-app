@@ -152,8 +152,8 @@ export function ChartsPage() {
     [];
 
   // Custom bar shape for the top-items chart: gold/silver/bronze for
-  // the top three (with a darker border of their own color), indigo
-  // for the rest.
+  // the top three (with a darker border of their own color), brand
+  // teal for the rest.
   const renderTopItemBar = (props: {
     x?: number | string;
     y?: number | string;
@@ -258,7 +258,7 @@ export function ChartsPage() {
         comparisonLoading ? (
           <Spinner />
         ) : overallData.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center dark:border-gray-700 dark:bg-gray-800">
+          <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center dark:border-gray-700 dark:bg-gray-800">
             <p className="text-gray-500 dark:text-gray-500">
               No budgets available. Create at least one budget to see
               charts.
@@ -402,7 +402,7 @@ export function ChartsPage() {
                   // selected (the category belongs to the old budget)
                   setSelectedCategory(null);
                 }}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
               >
                 {budgets.map((b) => (
                   <option key={b.id} value={b.id}>
@@ -414,7 +414,7 @@ export function ChartsPage() {
           )}
 
           {budgets && budgets.length === 0 && (
-            <div className="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center dark:border-gray-700 dark:bg-gray-800">
+            <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center dark:border-gray-700 dark:bg-gray-800">
               <p className="text-gray-500 dark:text-gray-500">
                 No budgets available. Create a budget first to see charts.
               </p>
@@ -521,7 +521,7 @@ export function ChartsPage() {
 
               {/* ── Variance chart: SOLL − IST per category ── */}
               <ChartContainer
-                title="Category Variance (SOLL − IST · green = under budget, red = overspent)"
+                title="Category Variance (SOLL − IST · teal = under budget, terracotta = overspent)"
                 className="lg:col-span-2"
               >
                 <ResponsiveContainer width="100%" height={chartHeight}>
@@ -557,8 +557,8 @@ export function ChartsPage() {
                           key={`variance-${entry.label}`}
                           fill={
                             entry.variance >= 0
-                              ? SERIES_COLORS.Actual
-                              : SERIES_COLORS.Expenses
+                              ? SERIES_COLORS.Income
+                              : SERIES_COLORS.Projected
                           }
                         />
                       ))}
@@ -573,11 +573,11 @@ export function ChartsPage() {
                 className="lg:col-span-2"
               >
                 <div className="grid grid-cols-2 gap-6">
-                  <div className="rounded-lg bg-indigo-50 p-4 dark:bg-indigo-900/30">
+                  <div className="rounded-lg bg-brand-50 p-4 dark:bg-brand-900/30">
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       Projected Balance (SOLL)
                     </p>
-                    <p className="text-2xl font-bold text-indigo-700 dark:text-indigo-300">
+                    <p className="text-2xl font-bold text-brand-700 dark:text-brand-300">
                       {formatCurrency(chartData.income_vs_expenses.projected)}
                     </p>
                   </div>

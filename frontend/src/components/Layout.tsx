@@ -10,12 +10,22 @@ import { useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../hooks/useTheme';
+import {
+  CalculatorIcon,
+  ChartLineIcon,
+  LayoutDashboardIcon,
+  MenuIcon,
+  MoonIcon,
+  SettingsIcon,
+  SunIcon,
+  XIcon,
+} from './Icons';
 
 const navItems = [
-  { to: '/', label: 'Dashboard', icon: '📊' },
-  { to: '/charts', label: 'Charts', icon: '📈' },
-  { to: '/calculator', label: 'Calculator', icon: '🧮' },
-  { to: '/settings', label: 'Settings', icon: '⚙️' },
+  { to: '/', label: 'Dashboard', icon: LayoutDashboardIcon },
+  { to: '/charts', label: 'Charts', icon: ChartLineIcon },
+  { to: '/calculator', label: 'Calculator', icon: CalculatorIcon },
+  { to: '/settings', label: 'Settings', icon: SettingsIcon },
 ];
 
 export function Layout() {
@@ -33,19 +43,19 @@ export function Layout() {
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* ── Sidebar ───────────────────────────── */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 transform bg-gray-900 transition-transform duration-200 lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 transform bg-brand-950 transition-transform duration-200 lg:static lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="flex h-16 items-center justify-between px-6">
-          <Link to="/" className="text-xl font-bold text-white">
+          <Link to="/" className="font-display text-xl font-bold text-white">
             Budget App
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
             className="text-gray-400 hover:text-white lg:hidden"
           >
-            ✕
+            <XIcon size={18} />
           </button>
         </div>
         <nav className="mt-4 space-y-1 px-3">
@@ -57,12 +67,12 @@ export function Layout() {
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                   isActive
-                    ? 'bg-indigo-600 text-white'
-                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                    ? 'bg-brand-600 text-white hover:bg-brand-700'
+                    : 'text-brand-100 hover:bg-white/10 hover:text-white'
                 }`
               }
             >
-              <span className="text-lg">{item.icon}</span>
+              <item.icon size={18} className="shrink-0" />
               {item.label}
             </NavLink>
           ))}
@@ -84,7 +94,7 @@ export function Layout() {
             onClick={() => setSidebarOpen(true)}
             className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white lg:hidden"
           >
-            ☰
+            <MenuIcon size={20} />
           </button>
           <div className="flex items-center gap-4">
             {/* ── Dark mode toggle ─────────────── */}
@@ -97,7 +107,11 @@ export function Layout() {
                   : 'Switch to light mode'
               }
             >
-              {theme === 'light' ? '🌙' : '☀️'}
+              {theme === 'light' ? (
+                <MoonIcon size={16} />
+              ) : (
+                <SunIcon size={16} />
+              )}
             </button>
             <span className="text-sm text-gray-600 dark:text-gray-400">
               {user?.email}

@@ -80,7 +80,7 @@ export function EditableCell({
         onChange={(e) => setEditValue(e.target.value)}
         onBlur={handleSave}
         onKeyDown={handleKeyDown}
-        className={`w-full rounded border border-indigo-400 px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-indigo-200 dark:border-indigo-500 dark:bg-gray-900 dark:text-gray-100 dark:focus:ring-indigo-800 ${className}`}
+        className={`w-full rounded border border-brand-400 px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-brand-200 dark:border-brand-500 dark:bg-gray-900 dark:text-gray-100 dark:focus:ring-brand-800 ${className}`}
       />
     );
   }
@@ -95,7 +95,7 @@ export function EditableCell({
         }
       }}
       tabIndex={editable ? 0 : -1}
-      className={`block cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-indigo-50 focus:bg-indigo-50 focus:ring-2 focus:ring-indigo-200 dark:text-gray-100 dark:hover:bg-indigo-900/30 dark:focus:bg-indigo-900/30 dark:focus:ring-indigo-800 ${
+      className={`block cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-brand-50 focus:bg-brand-50 focus:ring-2 focus:ring-brand-200 dark:text-gray-100 dark:hover:bg-brand-900/30 dark:focus:bg-brand-900/30 dark:focus:ring-brand-800 ${
         editable ? '' : 'cursor-default'
       } ${className}`}
     >

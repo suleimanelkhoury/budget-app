@@ -18,6 +18,7 @@ import { SummaryBar } from '../components/SummaryBar';
 import { invalidateBudgetData, queryKeys } from '../utils/queryKeys';
 import { neutralButtonClass } from '../utils/ui';
 import type { Category } from '../types';
+import { CalendarDaysIcon, DownloadIcon, SearchIcon, Trash2Icon, XIcon } from '../components/Icons';
 
 export function BudgetDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -154,7 +155,7 @@ export function BudgetDetailPage() {
         <p className="text-gray-500 dark:text-gray-500">Budget not found.</p>
         <Link
           to="/"
-          className="text-indigo-600 hover:underline dark:text-indigo-400"
+          className="text-brand-600 hover:underline dark:text-brand-400"
         >
           Back to Dashboard
         </Link>
@@ -202,19 +203,25 @@ export function BudgetDetailPage() {
           {/* ── Clone to new month (recurring templates) ── */}
           <button
             onClick={() => setShowCloneForm(!showCloneForm)}
-            className={neutralButtonClass}
+            className={`${neutralButtonClass} inline-flex items-center gap-2`}
             title="Clone this budget for a new month (recurring expenses)"
           >
-            📅 Clone to New Month
+            <CalendarDaysIcon size={14} /> Clone to New Month
           </button>
           {/* ── Export to Excel ──────────────────── */}
           <button
             onClick={() => exportMutation.mutate()}
             disabled={exportMutation.isPending}
-            className={`${neutralButtonClass} disabled:opacity-50`}
+            className={`${neutralButtonClass} inline-flex items-center gap-2 disabled:opacity-50`}
             title="Export this budget to an Excel file (same format as the import template)"
           >
-            {exportMutation.isPending ? 'Exporting…' : '⬇️ Export Excel'}
+            {exportMutation.isPending ? (
+              'Exporting…'
+            ) : (
+              <>
+                <DownloadIcon size={14} /> Export Excel
+              </>
+            )}
           </button>
           {/* ── Delete budget ─────────────────────── */}
           <button
@@ -222,7 +229,7 @@ export function BudgetDetailPage() {
             className="rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-800 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-950"
             title="Delete this budget and all its data"
           >
-            🗑 Delete
+            <Trash2Icon size={14} /> Delete
           </button>
           {/* ── Search bar ─────────────────────────── */}
           <div className="relative">
@@ -231,17 +238,17 @@ export function BudgetDetailPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search items…"
-              className="w-48 rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-indigo-500 focus:outline-none sm:w-64 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+              className="w-48 rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-brand-500 focus:outline-none sm:w-64 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
             />
             <span className="absolute left-3 top-2.5 text-gray-400 dark:text-gray-500">
-              🔍
+              <SearchIcon size={16} />
             </span>
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
                 className="absolute right-2 top-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
               >
-                ✕
+                <XIcon size={14} />
               </button>
             )}
           </div>
@@ -286,7 +293,7 @@ export function BudgetDetailPage() {
         <div className="mb-2 flex items-center justify-between">
           <button
             onClick={() => setShowAddIncome(!showAddIncome)}
-            className="text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+            className="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
           >
             + Add Income
           </button>
@@ -307,7 +314,7 @@ export function BudgetDetailPage() {
               }
               placeholder="Income label (e.g. Einkommen)"
               required
-              className="flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+              className="flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
             />
             <input
               type="number"
@@ -320,7 +327,7 @@ export function BudgetDetailPage() {
               }
               placeholder="SOLL"
               step="0.01"
-              className="w-24 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+              className="w-24 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
             />
             <input
               type="number"
@@ -333,12 +340,12 @@ export function BudgetDetailPage() {
               }
               placeholder="IST"
               step="0.01"
-              className="w-24 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+              className="w-24 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
             />
             <button
               type="submit"
               disabled={addIncomeMutation.isPending}
-              className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+              className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
             >
               Add
             </button>
@@ -355,7 +362,7 @@ export function BudgetDetailPage() {
           </h2>
           <button
             onClick={() => setShowAddCategory(!showAddCategory)}
-            className="text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+            className="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
           >
             + Add Category
           </button>
@@ -376,12 +383,12 @@ export function BudgetDetailPage() {
               }
               placeholder="Category name (e.g. Wohnen)"
               required
-              className="flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+              className="flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
             />
             <button
               type="submit"
               disabled={addCategoryMutation.isPending}
-              className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+              className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
             >
               Add
             </button>
@@ -402,7 +409,7 @@ export function BudgetDetailPage() {
           </div>
         ))}
         {filteredCategories.length === 0 && (
-          <div className="rounded-xl border border-dashed border-gray-300 bg-white p-8 text-center dark:border-gray-700 dark:bg-gray-800">
+          <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center dark:border-gray-700 dark:bg-gray-800">
             <p className="text-gray-500 dark:text-gray-500">
               {searchQuery
                 ? `No items found matching "${searchQuery}".`

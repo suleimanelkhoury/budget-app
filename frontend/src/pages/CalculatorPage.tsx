@@ -11,9 +11,11 @@
  * becomes the calculator's first argument: "+ 5" then Enter adds 5, "− 5"
  * subtracts, "× 2" doubles it, and typing a plain number then Enter
  * replaces the value outright. "=" evaluates in place so results can
- * be committed step by step. The selected expense row can be deleted
- * with the "−" next to it (income rows can't be deleted); unknown rows
- * can be named manually and placed into a category on the fly.
+ * be committed step by step. The "Round up" toggle rounds applied
+ * amounts up to the next full euro (14.51 → 15.00; whole euros go up
+ * by one, so 3.00 → 4.00). Double-clicking a row renames it (Enter
+ * saves, Escape cancels); the selected expense row can be deleted with
+ * the "−" next to it (income rows can't be deleted).
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -35,6 +37,11 @@ type Op = '+' | '-' | '*' | '/';
 
 /** Round to 2 decimals to avoid float drift from repeated additions. */
 const round2 = (v: number) => Math.round(v * 100) / 100;
+
+/** Round up to the next full euro — whole euros still go up by one
+ * (14.51 → 15.00, 3.00 → 4.00). The +1e-9 guards against float noise
+ * just below a whole euro (e.g. 14.999999999). */
+const roundUpToEuro = (v: number) => Math.floor(v + 1e-9) + 1;
 
 /** Extract the backend error envelope's message from an axios error. */
 function apiErrorMessage(err: unknown): string {
@@ -234,6 +241,60 @@ function BudgetOverview({
     onError: (err) => setDeleteError(apiErrorMessage(err)),
   });
 
+  // ── Row renaming (double-click on a row) ─────
+  const [renaming, setRenaming] = useState<{
+    kind: 'item' | 'income';
+    id: number;
+  } | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [renameError, setRenameError] = useState<string | null>(null);
+
+  const renameRowMutation = useMutation({
+    mutationFn: async ({
+      kind,
+      id,
+      label,
+    }: {
+      kind: 'item' | 'income';
+      id: number;
+      label: string;
+    }) => {
+      if (kind === 'item') await expenseItemsApi.update(id, { label });
+      else await incomeApi.update(id, { label });
+    },
+    onSuccess: () => {
+      invalidateBudgetData(queryClient, budget.id);
+      setRenaming(null);
+      setRenameError(null);
+    },
+    onError: (err) => setRenameError(apiErrorMessage(err)),
+  });
+
+  const startRename = (
+    kind: 'item' | 'income',
+    id: number,
+    label: string,
+  ) => {
+    setRenaming({ kind, id });
+    setRenameValue(label);
+    setRenameError(null);
+  };
+
+  const submitRename = () => {
+    if (!renaming) return;
+    const label = renameValue.trim();
+    if (!label) {
+      setRenameError('Enter a name.');
+      return;
+    }
+    renameRowMutation.mutate({ ...renaming, label });
+  };
+
+  const cancelRename = () => {
+    setRenaming(null);
+    setRenameError(null);
+  };
+
   return (
     <div className="space-y-4">
       {/* ── Incomes ───────────────────────────── */}
@@ -248,42 +309,88 @@ function BudgetOverview({
         ) : (
           <ul className="mt-2 space-y-1">
             {budget.incomes.map((income) => {
-              const isSelected = `income:${income.id}` === selectedItemId;
+              const rowId = `income:${income.id}`;
+              const isSelected = rowId === selectedItemId;
+              const isRenaming =
+                renaming?.kind === 'income' && renaming.id === income.id;
               return (
                 <li key={income.id} className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => onSelectItem(`income:${income.id}`)}
-                    className={`flex flex-1 items-baseline justify-between rounded-lg px-2 py-1.5 text-sm transition-colors ${
-                      isSelected
-                        ? 'bg-indigo-100 ring-1 ring-indigo-400 dark:bg-indigo-900/50 dark:ring-indigo-500'
-                        : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    <span
-                      className={`text-left ${
-                        isSelected
-                          ? 'font-semibold text-indigo-700 dark:text-indigo-200'
-                          : 'text-gray-900 dark:text-gray-100'
-                      }`}
-                    >
-                      {income.label}
-                    </span>
-                    <span className="text-right">
-                      <span
-                        className={`font-semibold ${
+                  {isRenaming ? (
+                    <>
+                      <input
+                        autoFocus
+                        type="text"
+                        value={renameValue}
+                        onChange={(e) => setRenameValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            submitRename();
+                          } else if (e.key === 'Escape') {
+                            e.preventDefault();
+                            cancelRename();
+                          }
+                        }}
+                        onBlur={cancelRename}
+                        className="min-w-0 flex-1 rounded-lg border border-indigo-400 px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none dark:bg-gray-900 dark:text-gray-100"
+                      />
+                      <span className="text-right text-sm">
+                        <span className="font-semibold text-gray-900 dark:text-gray-100">
+                          {formatCurrency(toNumber(income.actual_amount))}
+                        </span>
+                        <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">
+                          SOLL{' '}
+                          {formatCurrency(toNumber(income.projected_amount))}
+                        </span>
+                      </span>
+                      {renameError && (
+                        <span className="text-xs text-red-600 dark:text-red-300">
+                          {renameError}
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => onSelectItem(rowId)}
+                        onDoubleClick={() =>
+                          startRename('income', income.id, income.label)
+                        }
+                        title="Click to select — double-click to rename"
+                        className={`flex flex-1 items-baseline justify-between rounded-lg px-2 py-1.5 text-sm transition-colors ${
                           isSelected
-                            ? 'text-indigo-700 dark:text-indigo-200'
-                            : 'text-gray-900 dark:text-gray-100'
+                            ? 'bg-indigo-100 ring-1 ring-indigo-400 dark:bg-indigo-900/50 dark:ring-indigo-500'
+                            : 'hover:bg-gray-100 dark:hover:bg-gray-700'
                         }`}
                       >
-                        {formatCurrency(toNumber(income.actual_amount))}
-                      </span>
-                      <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">
-                        SOLL {formatCurrency(toNumber(income.projected_amount))}
-                      </span>
-                    </span>
-                  </button>
+                        <span
+                          className={`text-left ${
+                            isSelected
+                              ? 'font-semibold text-indigo-700 dark:text-indigo-200'
+                              : 'text-gray-900 dark:text-gray-100'
+                          }`}
+                        >
+                          {income.label}
+                        </span>
+                        <span className="text-right">
+                          <span
+                            className={`font-semibold ${
+                              isSelected
+                                ? 'text-indigo-700 dark:text-indigo-200'
+                                : 'text-gray-900 dark:text-gray-100'
+                            }`}
+                          >
+                            {formatCurrency(toNumber(income.actual_amount))}
+                          </span>
+                          <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">
+                            SOLL{' '}
+                            {formatCurrency(toNumber(income.projected_amount))}
+                          </span>
+                        </span>
+                      </button>
+                    </>
+                  )}
                 </li>
               );
             })}
@@ -304,6 +411,17 @@ function BudgetOverview({
           onNewRowLabel={onNewRowLabel}
           onCreateRow={onCreateRow}
           onCancelNewRow={onCancelNewRow}
+          renamingId={
+            renaming ? `${renaming.kind}:${renaming.id}` : null
+          }
+          renameValue={renameValue}
+          onRenameValue={setRenameValue}
+          onRenameStart={(item) =>
+            startRename('item', item.id, item.label)
+          }
+          onRenameSubmit={submitRename}
+          onRenameCancel={cancelRename}
+          renameError={renameError}
           onRequestDelete={(item) =>
             setDeleteTarget({
               id: item.id,
@@ -349,6 +467,13 @@ function CategoryOverviewCard({
   onNewRowLabel,
   onCreateRow,
   onCancelNewRow,
+  renamingId,
+  renameValue,
+  onRenameValue,
+  onRenameStart,
+  onRenameSubmit,
+  onRenameCancel,
+  renameError,
   onRequestDelete,
 }: {
   category: Category;
@@ -360,6 +485,14 @@ function CategoryOverviewCard({
   onNewRowLabel: (label: string) => void;
   onCreateRow: (categoryId: number, label: string) => void;
   onCancelNewRow: () => void;
+  /** Namespaced id of the row currently being renamed, if any. */
+  renamingId: string | null;
+  renameValue: string;
+  onRenameValue: (value: string) => void;
+  onRenameStart: (item: ExpenseItem) => void;
+  onRenameSubmit: () => void;
+  onRenameCancel: () => void;
+  renameError: string | null;
   onRequestDelete: (item: ExpenseItem) => void;
 }) {
   return (
@@ -390,52 +523,93 @@ function CategoryOverviewCard({
       ) : (
         <ul className="mt-2 space-y-1">
           {category.items.map((item) => {
-            const isSelected = `item:${item.id}` === selectedItemId;
+            const rowId = `item:${item.id}`;
+            const isSelected = rowId === selectedItemId;
+            const isRenaming = renamingId === rowId;
             return (
               <li key={item.id} className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => onSelectItem(`item:${item.id}`)}
-                  className={`flex flex-1 items-baseline justify-between rounded-lg px-2 py-1.5 text-sm transition-colors ${
-                    isSelected
-                      ? 'bg-indigo-100 ring-1 ring-indigo-400 dark:bg-indigo-900/50 dark:ring-indigo-500'
-                      : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  <span
-                    className={`text-left ${
-                      isSelected
-                        ? 'font-semibold text-indigo-700 dark:text-indigo-200'
-                        : 'text-gray-900 dark:text-gray-100'
-                    }`}
-                  >
-                    {item.label}
-                  </span>
-                  <span className="text-right">
-                    <span
-                      className={`font-semibold ${
+                {isRenaming ? (
+                  <>
+                    <input
+                      autoFocus
+                      type="text"
+                      value={renameValue}
+                      onChange={(e) => onRenameValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          onRenameSubmit();
+                        } else if (e.key === 'Escape') {
+                          e.preventDefault();
+                          onRenameCancel();
+                        }
+                      }}
+                      onBlur={onRenameCancel}
+                      className="min-w-0 flex-1 rounded-lg border border-indigo-400 px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none dark:bg-gray-900 dark:text-gray-100"
+                    />
+                    <span className="text-right text-sm">
+                      <span className="font-semibold text-gray-900 dark:text-gray-100">
+                        {formatCurrency(toNumber(item.actual_cost))}
+                      </span>
+                      <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">
+                        SOLL {formatCurrency(toNumber(item.projected_cost))}
+                      </span>
+                    </span>
+                    {renameError && (
+                      <span className="text-xs text-red-600 dark:text-red-300">
+                        {renameError}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => onSelectItem(rowId)}
+                      onDoubleClick={() => onRenameStart(item)}
+                      title="Click to select — double-click to rename"
+                      className={`flex flex-1 items-baseline justify-between rounded-lg px-2 py-1.5 text-sm transition-colors ${
                         isSelected
-                          ? 'text-indigo-700 dark:text-indigo-200'
-                          : 'text-gray-900 dark:text-gray-100'
+                          ? 'bg-indigo-100 ring-1 ring-indigo-400 dark:bg-indigo-900/50 dark:ring-indigo-500'
+                          : 'hover:bg-gray-100 dark:hover:bg-gray-700'
                       }`}
                     >
-                      {formatCurrency(toNumber(item.actual_cost))}
-                    </span>
-                    <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">
-                      SOLL {formatCurrency(toNumber(item.projected_cost))}
-                    </span>
-                  </span>
-                </button>
-                {/* Delete button — only on the selected row */}
-                {isSelected && (
-                  <button
-                    type="button"
-                    onClick={() => onRequestDelete(item)}
-                    title={`Delete ${item.label}`}
-                    className="rounded-lg bg-red-50 px-2 py-1.5 text-sm font-semibold text-red-600 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50"
-                  >
-                    −
-                  </button>
+                      <span
+                        className={`text-left ${
+                          isSelected
+                            ? 'font-semibold text-indigo-700 dark:text-indigo-200'
+                            : 'text-gray-900 dark:text-gray-100'
+                        }`}
+                      >
+                        {item.label}
+                      </span>
+                      <span className="text-right">
+                        <span
+                          className={`font-semibold ${
+                            isSelected
+                              ? 'text-indigo-700 dark:text-indigo-200'
+                              : 'text-gray-900 dark:text-gray-100'
+                          }`}
+                        >
+                          {formatCurrency(toNumber(item.actual_cost))}
+                        </span>
+                        <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">
+                          SOLL {formatCurrency(toNumber(item.projected_cost))}
+                        </span>
+                      </span>
+                    </button>
+                    {/* Delete button — only on the selected row */}
+                    {isSelected && (
+                      <button
+                        type="button"
+                        onClick={() => onRequestDelete(item)}
+                        title={`Delete ${item.label}`}
+                        className="rounded-lg bg-red-50 px-2 py-1.5 text-sm font-semibold text-red-600 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50"
+                      >
+                        −
+                      </button>
+                    )}
+                  </>
                 )}
               </li>
             );
@@ -483,6 +657,9 @@ function CalculatorPanel({
   // Which value of the selected row the calculator edits — toggled by
   // clicking the IST/SOLL tag inside the display
   const [field, setField] = useState<'ist' | 'soll'>('ist');
+  // Round up: committed amounts are rounded up to the next full euro
+  // (14.51 → 15.00; 3.00 → 4.00, i.e. the round-up is a full euro)
+  const [roundUp, setRoundUp] = useState(false);
 
   // The selected row: either an expense item (item:<id>) or an income
   // row (income:<id>) — both work as the calculator's first argument.
@@ -640,7 +817,12 @@ function CalculatorPanel({
       setError('Enter an amount (e.g. 5 or +5) first.');
       return;
     }
-    const amount = round2(pendingAmount);
+    const raw = round2(pendingAmount);
+    const amount = roundUp ? roundUpToEuro(raw) : raw;
+    const roundedNote =
+      roundUp && amount !== raw
+        ? ` (rounded up from ${formatCurrency(raw)})`
+        : '';
 
     if (target) {
       const previous = toNumber(seedValue ?? 0);
@@ -662,7 +844,7 @@ function CalculatorPanel({
         });
       }
       setFlash(
-        `Set "${label}" ${field === 'ist' ? '(IST)' : '(SOLL)'} to ${formatCurrency(amount)} (was ${formatCurrency(previous)}).`,
+        `Set "${label}" ${field === 'ist' ? '(IST)' : '(SOLL)'} to ${formatCurrency(amount)} (was ${formatCurrency(previous)}).${roundedNote}`,
       );
     }
 
@@ -751,16 +933,18 @@ function CalculatorPanel({
   // ── Preview line: what the commit will produce ──
   const preview = (() => {
     if (pendingAmount === null) return null;
-    const amount = round2(pendingAmount);
+    const raw = round2(pendingAmount);
+    const amount = roundUp ? roundUpToEuro(raw) : raw;
+    const note = roundUp && amount !== raw ? ' (rounded up)' : '';
     if (target) {
       const current = toNumber(seedValue ?? 0);
       if (op) {
         const typed = evaluateExpression(input);
         if (typed !== null) {
-          return `${formatCurrency(current)} ${OP_SYMBOL[op]} ${formatCurrency(round2(typed))} = ${formatCurrency(amount)}`;
+          return `${formatCurrency(current)} ${OP_SYMBOL[op]} ${formatCurrency(round2(typed))} = ${formatCurrency(amount)}${note}`;
         }
       }
-      return `${formatCurrency(current)} → ${formatCurrency(amount)}`;
+      return `${formatCurrency(current)} → ${formatCurrency(amount)}${note}`;
     }
     return null;
   })();
@@ -928,14 +1112,29 @@ function CalculatorPanel({
 
         <button
           type="button"
-          className={`${calcButtonClass('num')} col-span-2`}
+          className={calcButtonClass('num')}
           onClick={() => appendChar('0')}
         >
           0
         </button>
         <button
           type="button"
-          className={`${calcButtonClass('equals')} col-span-2`}
+          onClick={() => {
+            setRoundUp((r) => !r);
+            setError(null);
+          }}
+          title="Round the applied amount up to the next full euro (14.51 → 15.00, 3.00 → 4.00)"
+          className={`rounded-lg py-3 text-sm font-semibold uppercase tracking-wide transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+            roundUp
+              ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+          }`}
+        >
+          Round up
+        </button>
+        <button
+          type="button"
+          className={calcButtonClass('equals')}
           onClick={commit}
           disabled={!canCommit}
           title="Apply to the selected row (Enter)"

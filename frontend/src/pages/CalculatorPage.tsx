@@ -19,7 +19,9 @@
  * row itself), the rounded total lands on the working row instead.
  * Double-clicking a row renames it (Enter saves, Escape cancels); the
  * selected expense row can be deleted with the "−" next to it (income
- * rows can't be deleted).
+ * rows can't be deleted). Escape clears the calculator and, when it's
+ * already empty, deselects the row; clicking any empty spot on the
+ * page also deselects it.
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -158,7 +160,17 @@ export function CalculatorPage() {
   };
 
   return (
-    <div>
+    <div
+      onClick={(e) => {
+        // Clicking any non-interactive spot on the page deselects the
+        // row (buttons, inputs, selects, and links keep working)
+        const el = e.target as HTMLElement;
+        if (el.closest('button, input, select, a, label, [role="button"]')) {
+          return;
+        }
+        setSelectedRow('');
+      }}
+    >
       <h1 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">
         Calculator
       </h1>
@@ -221,7 +233,11 @@ export function CalculatorPage() {
 
           {/* ── Right ⅓: calculator ──────────────── */}
           <div>
-            <CalculatorPanel budget={budget} selectedRow={selectedRow} />
+            <CalculatorPanel
+              budget={budget}
+              selectedRow={selectedRow}
+              onDeselectRow={() => setSelectedRow('')}
+            />
           </div>
         </div>
       )}
@@ -677,9 +693,11 @@ function CategoryOverviewCard({
 function CalculatorPanel({
   budget,
   selectedRow,
+  onDeselectRow,
 }: {
   budget: BudgetDetail;
   selectedRow: string;
+  onDeselectRow: () => void;
 }) {
   const queryClient = useQueryClient();
   const categories = budget.categories ?? [];
@@ -792,6 +810,18 @@ function CalculatorPanel({
     setInput('');
     setOp(null);
     setError(null);
+  };
+
+  /** Escape: clear the calculator first; if it's already empty,
+   * deselect the row. */
+  const escapeAction = () => {
+    if (input || op) {
+      clear();
+    } else {
+      setError(null);
+      setFlash(null);
+      onDeselectRow();
+    }
   };
 
   /** Evaluate the pending expression in place (the "=" button/key). */
@@ -943,7 +973,7 @@ function CalculatorPanel({
     appendChar,
     pressOperator,
     backspace,
-    clear,
+    escapeAction,
   });
   useEffect(() => {
     handlersRef.current = {
@@ -952,7 +982,7 @@ function CalculatorPanel({
       appendChar,
       pressOperator,
       backspace,
-      clear,
+      escapeAction,
     };
   });
 
@@ -977,7 +1007,7 @@ function CalculatorPanel({
         appendChar: doAppend,
         pressOperator: doPressOperator,
         backspace: doBackspace,
-        clear: doClear,
+        escapeAction: doEscapeAction,
       } = handlersRef.current;
 
       if (/^[0-9]$/.test(e.key)) {
@@ -1003,7 +1033,7 @@ function CalculatorPanel({
         e.preventDefault();
         doBackspace();
       } else if (e.key === 'Escape') {
-        doClear();
+        doEscapeAction();
       }
     };
     window.addEventListener('keydown', handleKeyDown);

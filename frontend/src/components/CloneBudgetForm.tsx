@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { budgetsApi } from '../api';
 import { formatMonthYear } from '../utils/format';
 import { queryKeys } from '../utils/queryKeys';
+import { neutralButtonClass } from '../utils/ui';
 import type { Budget } from '../types';
 
 interface CloneBudgetFormProps {
@@ -141,7 +142,7 @@ export function CloneBudgetForm({
         <button
           type="button"
           onClick={onClose}
-          className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
+          className={neutralButtonClass}
         >
           Cancel
         </button>

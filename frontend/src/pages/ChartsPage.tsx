@@ -175,6 +175,7 @@ export function ChartsPage() {
     const stroke = isMedal ? MEDAL_COLORS[index].border : undefined;
     return (
       <rect
+        className="top-item-bar"
         x={x}
         y={y}
         width={width}

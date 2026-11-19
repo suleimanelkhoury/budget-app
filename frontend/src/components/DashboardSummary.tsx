@@ -29,7 +29,7 @@ import { budgetsApi } from '../api';
 import { balanceColor } from '../utils/balance';
 import { formatCurrency, toNumber } from '../utils/format';
 import { queryKeys } from '../utils/queryKeys';
-import { pillButtonClass } from '../utils/ui';
+import { neutralButtonClass, pillButtonClass } from '../utils/ui';
 import { CategorySpendingModal } from './CategorySpendingModal';
 import type { BudgetComparisonEntry } from '../types';
 
@@ -142,7 +142,7 @@ export function DashboardSummary() {
         <button
           type="button"
           onClick={() => setShowCategorySpending(true)}
-          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+          className={neutralButtonClass}
           title={`Actual spending per category in ${activeYear}`}
         >
           📊 Category Spending

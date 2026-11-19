@@ -15,6 +15,7 @@ import { ExcelImportModal } from '../components/ExcelImportModal';
 import { Spinner } from '../components/Spinner';
 import { emptyBudgetDraft } from '../utils/budgetForm';
 import { queryKeys } from '../utils/queryKeys';
+import { neutralButtonClass } from '../utils/ui';
 
 export function DashboardPage() {
   const navigate = useNavigate();
@@ -97,13 +98,13 @@ export function DashboardPage() {
         <div className="flex gap-3">
           <button
             onClick={() => setShowImportModal(true)}
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+            className={neutralButtonClass}
           >
             📥 Import Excel
           </button>
           <button
             onClick={() => setShowCreateForm(true)}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
           >
             + New Budget
           </button>
@@ -172,14 +173,14 @@ export function DashboardPage() {
               <button
                 type="submit"
                 disabled={createMutation.isPending}
-                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
               >
                 {createMutation.isPending ? 'Creating…' : 'Create'}
               </button>
               <button
                 type="button"
                 onClick={() => setShowCreateForm(false)}
-                className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
               >
                 Cancel
               </button>

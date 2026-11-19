@@ -16,6 +16,7 @@ import { IncomeTable } from '../components/IncomeTable';
 import { Spinner } from '../components/Spinner';
 import { SummaryBar } from '../components/SummaryBar';
 import { invalidateBudgetData, queryKeys } from '../utils/queryKeys';
+import { neutralButtonClass } from '../utils/ui';
 import type { Category } from '../types';
 
 export function BudgetDetailPage() {
@@ -201,7 +202,7 @@ export function BudgetDetailPage() {
           {/* ── Clone to new month (recurring templates) ── */}
           <button
             onClick={() => setShowCloneForm(!showCloneForm)}
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+            className={neutralButtonClass}
             title="Clone this budget for a new month (recurring expenses)"
           >
             📅 Clone to New Month
@@ -210,7 +211,7 @@ export function BudgetDetailPage() {
           <button
             onClick={() => exportMutation.mutate()}
             disabled={exportMutation.isPending}
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-50"
+            className={`${neutralButtonClass} disabled:opacity-50`}
             title="Export this budget to an Excel file (same format as the import template)"
           >
             {exportMutation.isPending ? 'Exporting…' : '⬇️ Export Excel'}

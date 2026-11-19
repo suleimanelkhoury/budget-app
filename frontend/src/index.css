@@ -22,6 +22,23 @@ body {
   background-color: #f9fafb;
 }
 
+/* Calculator-style hover fade for chart bar segments (Recharts bars
+   can't take Tailwind hover classes) */
+.recharts-bar-rectangle path,
+.recharts-bar-rectangle rect {
+  transition: opacity 150ms ease;
+}
+.recharts-bar-rectangle:hover path,
+.recharts-bar-rectangle:hover rect {
+  opacity: 0.8;
+}
+.top-item-bar {
+  transition: opacity 150ms ease;
+}
+.top-item-bar:hover {
+  opacity: 0.8;
+}
+
 #root {
   min-height: 100vh;
 }

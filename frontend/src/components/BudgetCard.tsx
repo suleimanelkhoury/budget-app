@@ -78,7 +78,7 @@ export function BudgetCard({
   return (
     <div
       onClick={() => navigate(`/budgets/${budget.id}`)}
-      className={`cursor-pointer rounded-xl border bg-white p-5 shadow-sm transition-shadow hover:shadow-md dark:bg-gray-800 ${
+      className={`cursor-pointer rounded-xl border bg-white p-5 shadow-sm transition-colors hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 ${
         isCurrent
           ? 'border-indigo-400 ring-1 ring-indigo-400 dark:border-indigo-500 dark:ring-indigo-500'
           : 'border-gray-200 dark:border-gray-700'
@@ -106,7 +106,7 @@ export function BudgetCard({
                 cloneMutation.mutate();
               }}
               disabled={cloneMutation.isPending}
-              className="rounded px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950 disabled:opacity-50"
+              className="rounded px-2 py-1 text-xs font-medium text-indigo-600 transition-colors hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950 disabled:opacity-50"
               title={`Clone this budget into ${nextTitle} — projected amounts are copied, actual amounts start at zero`}
             >
               +
@@ -118,7 +118,7 @@ export function BudgetCard({
               exportMutation.mutate();
             }}
             disabled={exportMutation.isPending}
-            className="rounded p-1 text-gray-400 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-950 dark:hover:text-indigo-400 disabled:opacity-50"
+            className="rounded p-1 text-gray-400 transition-colors hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-950 dark:hover:text-indigo-400 disabled:opacity-50"
             title="Export budget to Excel"
             aria-label={`Export budget ${budget.title} to Excel`}
           >
@@ -129,7 +129,7 @@ export function BudgetCard({
               e.stopPropagation();
               setShowDeleteConfirm(true);
             }}
-            className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950 dark:hover:text-red-400"
+            className="rounded p-1 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950 dark:hover:text-red-400"
             title="Delete budget"
             aria-label={`Delete budget ${budget.title}`}
           >

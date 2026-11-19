@@ -19,6 +19,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  LabelList,
   Legend,
   Line,
   LineChart,
@@ -35,8 +36,7 @@ import { CategoryDrillDownModal } from '../components/CategoryDrillDownModal';
 import { ChartContainer } from '../components/ChartContainer';
 import { Spinner } from '../components/Spinner';
 import { formatCurrency, formatMonthYear, toNumber } from '../utils/format';
-import { pillButtonClass } from '../utils/ui';
-import { queryKeys } from '../utils/queryKeys';
+import { pillButtonClass } from '../utils/ui';import { queryKeys } from '../utils/queryKeys';
 import {
   CHART_TOOLTIP_STYLE,
   PIE_COLORS,
@@ -44,6 +44,67 @@ import {
 } from '../utils/chartTheme';
 
 type ChartTab = 'overall' | 'monthly';
+
+/** Medal colors for the top three rows (gold / silver / bronze). */
+const MEDAL_COLORS = [
+  { ring: '#ffe066', fill: '#d9a406', border: '#a87d04' },
+  { ring: '#d9d9d9', fill: '#9e9e9e', border: '#707070' },
+  { ring: '#f2a65a', fill: '#c47f3e', border: '#8f5a28' },
+];
+
+/** Medal badge (gold / silver / bronze) with blue ribbons, drawn at the
+ * left edge of the top three bars in the top-items chart. */
+function MedalBadge(props: {
+  x?: number | string;
+  y?: number | string;
+  height?: number | string;
+  index?: number;
+}) {
+  const index = Number(props.index ?? -1);
+  if (index < 0 || index >= MEDAL_COLORS.length) return null;
+  const x = Number(props.x ?? 0);
+  const y = Number(props.y ?? 0);
+  const height = Number(props.height ?? 0);
+  const { ring, fill } = MEDAL_COLORS[index];
+  const r = 13;
+  const cx = x + r + 1;
+  const cy = y + height / 2;
+  // Two blue swallowtail ribbons splayed out beneath the medal
+  const ribbon = '#2b5dd7';
+  const tails = [-1, 1].map((s) => (
+    <polygon
+      key={s}
+      points={[
+        [cx + s * r * 0.25, cy + r * 0.4],
+        [cx + s * r * 0.9, cy + r * 0.95],
+        [cx + s * r * 0.9, cy + r * 1.6],
+        [cx + s * r * 0.575, cy + r * 1.25],
+        [cx + s * r * 0.25, cy + r * 1.6],
+      ]
+        .map(([px, py]) => `${px},${py}`)
+        .join(' ')}
+      fill={ribbon}
+    />
+  ));
+  return (
+    <g>
+      {tails}
+      <circle cx={cx} cy={cy} r={r} fill={ring} />
+      <circle cx={cx} cy={cy} r={r - 4} fill={fill} />
+      <text
+        x={cx}
+        y={cy}
+        textAnchor="middle"
+        dominantBaseline="central"
+        fontSize={12}
+        fontWeight={700}
+        fill="#ffffff"
+      >
+        {index + 1}
+      </text>
+    </g>
+  );
+}
 
 export function ChartsPage() {
   const [tab, setTab] = useState<ChartTab>('overall');
@@ -89,6 +150,42 @@ export function ChartsPage() {
   const topItemsData =
     topItems?.items.map((i) => ({ label: i.label, value: toNumber(i.total) })) ??
     [];
+
+  // Custom bar shape for the top-items chart: gold/silver/bronze for
+  // the top three (with a darker border of their own color), indigo
+  // for the rest.
+  const renderTopItemBar = (props: {
+    x?: number | string;
+    y?: number | string;
+    width?: number | string;
+    height?: number | string;
+    payload?: { label?: string };
+  }) => {
+    const x = Number(props.x ?? 0);
+    const y = Number(props.y ?? 0);
+    const width = Number(props.width ?? 0);
+    const height = Number(props.height ?? 0);
+    const index = topItemsData.findIndex(
+      (d) => d.label === props.payload?.label,
+    );
+    const isMedal = index >= 0 && index < MEDAL_COLORS.length;
+    const fill = isMedal
+      ? MEDAL_COLORS[index].fill
+      : SERIES_COLORS.Projected;
+    const stroke = isMedal ? MEDAL_COLORS[index].border : undefined;
+    return (
+      <rect
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        rx={4}
+        fill={fill}
+        stroke={stroke}
+        strokeWidth={stroke ? 2 : 0}
+      />
+    );
+  };
 
   // ── Monthly tab data ─────────────────────────
   const { data: chartData, isLoading } = useQuery({
@@ -275,9 +372,12 @@ export function ChartsPage() {
                     <Bar
                       dataKey="value"
                       name="Spent (IST)"
-                      fill={SERIES_COLORS.Projected}
+                      shape={renderTopItemBar}
                       radius={[0, 4, 4, 0]}
-                    />
+                    >
+                      {/* Medals on the top three bars */}
+                      <LabelList dataKey="value" content={MedalBadge} />
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </ChartContainer>

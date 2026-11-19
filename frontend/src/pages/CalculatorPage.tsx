@@ -11,11 +11,15 @@
  * becomes the calculator's first argument: "+ 5" then Enter adds 5, "− 5"
  * subtracts, "× 2" doubles it, and typing a plain number then Enter
  * replaces the value outright. "=" evaluates in place so results can
- * be committed step by step. The "Round up" toggle rounds applied
- * amounts up to the next full euro (14.51 → 15.00; whole euros go up
- * by one, so 3.00 → 4.00). Double-clicking a row renames it (Enter
- * saves, Escape cancels); the selected expense row can be deleted with
- * the "−" next to it (income rows can't be deleted).
+ * be committed step by step. The "Round up" toggle keeps the applied
+ * amount exact on the working row and adds the round-ups of every
+ * typed number (1 → 1.00, 0.5 → 0.50) to the "MSCI World" row in
+ * "Investitionen" — subtracting removes them from there again (× and
+ * ÷ don't touch MSCI World). If that row is missing (or is the working
+ * row itself), the rounded total lands on the working row instead.
+ * Double-clicking a row renames it (Enter saves, Escape cancels); the
+ * selected expense row can be deleted with the "−" next to it (income
+ * rows can't be deleted).
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -42,6 +46,32 @@ const round2 = (v: number) => Math.round(v * 100) / 100;
  * (14.51 → 15.00, 3.00 → 4.00). The +1e-9 guards against float noise
  * just below a whole euro (e.g. 14.999999999). */
 const roundUpToEuro = (v: number) => Math.floor(v + 1e-9) + 1;
+
+/** The round-up beneficiary: the "MSCI World" row in the
+ * "Investitionen" category (matched case-insensitively). The round-up
+ * difference is added there automatically. */
+function findRoundUpRow(budget: BudgetDetail): ExpenseItem | null {
+  const category = budget.categories.find(
+    (c) => c.name.trim().toLowerCase() === 'investitionen',
+  );
+  return (
+    category?.items.find(
+      (i) => i.label.trim().toLowerCase() === 'msci world',
+    ) ?? null
+  );
+}
+
+/** Total round-up of every number typed into `expr`: each number is
+ * rounded up to the next full euro (1 → 1.00, 0.5 → 0.50, 14.51 →
+ * 0.49) and the differences are summed. */
+function typedRoundUpDiff(expr: string): number {
+  let total = 0;
+  for (const match of expr.matchAll(/\d+(\.\d+)?/g)) {
+    const n = Number(match[0]);
+    total += roundUpToEuro(n) - n;
+  }
+  return round2(total);
+}
 
 /** Extract the backend error envelope's message from an axios error. */
 function apiErrorMessage(err: unknown): string {
@@ -714,9 +744,11 @@ function CalculatorPanel({
     if (isOperatorChar(ch)) return; // operators go through pressOperator
     setInput((prev) => {
       if (ch === '.') {
-        // One dot per number; an empty input starts "0."
-        if (prev.includes('.')) return prev;
-        return prev === '' ? '0.' : prev + '.';
+        // One dot per number; the trailing number (after the last
+        // operator) decides — an empty one starts "0."
+        const trailing = /[0-9.]*$/.exec(prev)?.[0] ?? '';
+        if (trailing.includes('.')) return prev;
+        return prev + (trailing === '' ? '0.' : '.');
       }
       return prev + ch;
     });
@@ -727,11 +759,24 @@ function CalculatorPanel({
     if (seedValue === null) return;
     setError(null);
     setFlash(null);
-    // Starting an operation discards a typed set-value; pressing a
-    // different operator while one is pending just switches it (the
-    // typed number stays as the second argument)
-    if (!op) setInput('');
-    setOp(next);
+    if (!op) {
+      // Start an operation on the row value (discards a typed
+      // set-value)
+      setInput('');
+      setOp(next);
+    } else if (input === '') {
+      // Nothing typed yet — just switch the pending operation
+      setOp(next);
+    } else {
+      // Chain: fold the typed number into the expression, e.g.
+      // "59.85 + 1" then "+" → "59.85 + 1+"; a trailing operator is
+      // replaced (fixes a double-tap)
+      setInput((prev) => {
+        const last = prev[prev.length - 1];
+        if (isOperatorChar(last)) return prev.slice(0, -1) + next;
+        return prev + next;
+      });
+    }
   };
 
   const backspace = () => {
@@ -817,36 +862,74 @@ function CalculatorPanel({
       setError('Enter an amount (e.g. 5 or +5) first.');
       return;
     }
+    if (!target) return;
     const raw = round2(pendingAmount);
-    const amount = roundUp ? roundUpToEuro(raw) : raw;
-    const roundedNote =
-      roundUp && amount !== raw
-        ? ` (rounded up from ${formatCurrency(raw)})`
-        : '';
+    const previous = toNumber(seedValue ?? 0);
+    const label =
+      target.kind === 'item' ? target.item.label : target.income.label;
 
-    if (target) {
-      const previous = toNumber(seedValue ?? 0);
-      const label =
-        target.kind === 'item' ? target.item.label : target.income.label;
-      if (target.kind === 'item') {
-        updateItemMutation.mutate({
-          id: target.item.id,
-          ...(field === 'ist'
-            ? { actualCost: amount.toFixed(2) }
-            : { projectedCost: amount.toFixed(2) }),
-        });
-      } else {
-        updateIncomeMutation.mutate({
-          id: target.income.id,
-          ...(field === 'ist'
-            ? { actualAmount: amount.toFixed(2) }
-            : { projectedAmount: amount.toFixed(2) }),
-        });
+    // Round up: the working row gets the exact amount; the round-ups
+    // of every typed number (1 → 1.00, 0.5 → 0.50, …) go to the MSCI
+    // World row (Investitionen) — added on add/replace, removed again
+    // on subtract. × and ÷ don't touch MSCI World. If the row doesn't
+    // exist (or the working row IS MSCI World), the rounded total
+    // lands on the working row, as before.
+    let applied = raw;
+    let roundNote = '';
+    let extra: { id: number; label: string; amount: number } | null = null;
+
+    if (roundUp) {
+      const msci = findRoundUpRow(budget);
+      const isSelf = target.kind === 'item' && msci?.id === target.item.id;
+      const diff = typedRoundUpDiff(input);
+      const direction = op === '-' ? -1 : op === null || op === '+' ? 1 : 0;
+      if (msci && !isSelf && direction !== 0) {
+        const msciPrevious =
+          field === 'ist'
+            ? toNumber(msci.actual_cost)
+            : toNumber(msci.projected_cost);
+        extra = {
+          id: msci.id,
+          label: msci.label,
+          amount: round2(msciPrevious + direction * diff),
+        };
+        roundNote =
+          direction > 0
+            ? ` — ${formatCurrency(diff)} to ${msci.label}`
+            : ` — ${formatCurrency(diff)} from ${msci.label}`;
+      } else if (direction !== 0) {
+        applied = roundUpToEuro(raw);
+        roundNote = ' (rounded up)';
       }
-      setFlash(
-        `Set "${label}" ${field === 'ist' ? '(IST)' : '(SOLL)'} to ${formatCurrency(amount)} (was ${formatCurrency(previous)}).${roundedNote}`,
-      );
     }
+
+    const amount = round2(applied);
+    if (target.kind === 'item') {
+      updateItemMutation.mutate({
+        id: target.item.id,
+        ...(field === 'ist'
+          ? { actualCost: amount.toFixed(2) }
+          : { projectedCost: amount.toFixed(2) }),
+      });
+    } else {
+      updateIncomeMutation.mutate({
+        id: target.income.id,
+        ...(field === 'ist'
+          ? { actualAmount: amount.toFixed(2) }
+          : { projectedAmount: amount.toFixed(2) }),
+      });
+    }
+    if (extra) {
+      updateItemMutation.mutate({
+        id: extra.id,
+        ...(field === 'ist'
+          ? { actualCost: extra.amount.toFixed(2) }
+          : { projectedCost: extra.amount.toFixed(2) }),
+      });
+    }
+    setFlash(
+      `Set "${label}" ${field === 'ist' ? '(IST)' : '(SOLL)'} to ${formatCurrency(amount)} (was ${formatCurrency(previous)}).${roundNote}`,
+    );
 
     setInput('');
     setOp(null);
@@ -934,8 +1017,23 @@ function CalculatorPanel({
   const preview = (() => {
     if (pendingAmount === null) return null;
     const raw = round2(pendingAmount);
-    const amount = roundUp ? roundUpToEuro(raw) : raw;
-    const note = roundUp && amount !== raw ? ' (rounded up)' : '';
+    let amount = raw;
+    let note = '';
+    if (roundUp && target) {
+      const msci = findRoundUpRow(budget);
+      const isSelf = target.kind === 'item' && msci?.id === target.item.id;
+      const diff = typedRoundUpDiff(input);
+      const direction = op === '-' ? -1 : op === null || op === '+' ? 1 : 0;
+      if (msci && !isSelf && direction !== 0) {
+        note =
+          direction > 0
+            ? ` (+${formatCurrency(diff)} → ${msci.label})`
+            : ` (−${formatCurrency(diff)} from ${msci.label})`;
+      } else if (direction !== 0) {
+        amount = roundUpToEuro(raw);
+        note = ' (rounded up)';
+      }
+    }
     if (target) {
       const current = toNumber(seedValue ?? 0);
       if (op) {
@@ -1016,6 +1114,7 @@ function CalculatorPanel({
       )}
 
       {/* ── Calculator buttons ────────────────── */}
+      {/* Right column, top to bottom: ÷ × − + = */}
       <div className="mt-3 grid grid-cols-4 gap-2">
         <button
           type="button"
@@ -1033,6 +1132,21 @@ function CalculatorPanel({
         </button>
         <button
           type="button"
+          onClick={() => {
+            setRoundUp((r) => !r);
+            setError(null);
+          }}
+          title="Round the applied amount up to the next full euro (14.51 → 15.00, 3.00 → 4.00)"
+          className={`rounded-lg py-3 text-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+            roundUp
+              ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+          }`}
+        >
+          €↑
+        </button>
+        <button
+          type="button"
           className={calcButtonClass('op')}
           onClick={() => pressOperator('/')}
           disabled={seedValue === null}
@@ -1040,6 +1154,17 @@ function CalculatorPanel({
         >
           ÷
         </button>
+
+        {['7', '8', '9'].map((d) => (
+          <button
+            key={d}
+            type="button"
+            className={calcButtonClass('num')}
+            onClick={() => appendChar(d)}
+          >
+            {d}
+          </button>
+        ))}
         <button
           type="button"
           className={calcButtonClass('op')}
@@ -1050,7 +1175,7 @@ function CalculatorPanel({
           ×
         </button>
 
-        {['7', '8', '9'].map((d) => (
+        {['4', '5', '6'].map((d) => (
           <button
             key={d}
             type="button"
@@ -1070,7 +1195,7 @@ function CalculatorPanel({
           −
         </button>
 
-        {['4', '5', '6'].map((d) => (
+        {['1', '2', '3'].map((d) => (
           <button
             key={d}
             type="button"
@@ -1090,47 +1215,12 @@ function CalculatorPanel({
           +
         </button>
 
-        {['1', '2', '3'].map((d) => (
-          <button
-            key={d}
-            type="button"
-            className={calcButtonClass('num')}
-            onClick={() => appendChar(d)}
-          >
-            {d}
-          </button>
-        ))}
         <button
           type="button"
-          className={calcButtonClass('equals')}
-          onClick={evaluate}
-          disabled={!input && !op}
-          title="Evaluate in place"
-        >
-          =
-        </button>
-
-        <button
-          type="button"
-          className={calcButtonClass('num')}
+          className={`${calcButtonClass('num')} col-span-2`}
           onClick={() => appendChar('0')}
         >
           0
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setRoundUp((r) => !r);
-            setError(null);
-          }}
-          title="Round the applied amount up to the next full euro (14.51 → 15.00, 3.00 → 4.00)"
-          className={`rounded-lg py-3 text-sm font-semibold uppercase tracking-wide transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
-            roundUp
-              ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-          }`}
-        >
-          Round up
         </button>
         <button
           type="button"
@@ -1140,6 +1230,15 @@ function CalculatorPanel({
           title="Apply to the selected row (Enter)"
         >
           ⏎
+        </button>
+        <button
+          type="button"
+          className={calcButtonClass('op')}
+          onClick={evaluate}
+          disabled={!input && !op}
+          title="Evaluate in place (=)"
+        >
+          =
         </button>
       </div>
     </div>

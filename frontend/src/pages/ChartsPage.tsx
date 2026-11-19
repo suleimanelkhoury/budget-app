@@ -2,8 +2,9 @@
  * Charts Page — visualizations using Recharts.
  *
  * Two tabs:
- * - Overall: income vs. expenses and the cash balance (savings
- *   trajectory) over time, with the SOLL plan as dashed lines
+ * - Overall: income vs. expenses, the cash balance (savings
+ *   trajectory) over time, and the top expense rows across all
+ *   budgets, with the SOLL plan as dashed lines
  *   (moved here from the former Comparison page).
  * - Monthly: single-budget charts — expenses by category (SOLL vs
  *   IST), the expense distribution donut, and per-category variance
@@ -65,6 +66,12 @@ export function ChartsPage() {
     queryFn: budgetsApi.compare,
   });
 
+  // Top expense rows across ALL budgets (aggregated by row label)
+  const { data: topItems } = useQuery({
+    queryKey: queryKeys.topItems,
+    queryFn: budgetsApi.getTopItems,
+  });
+
   const overallData =
     comparison?.budgets.map((e) => ({
       label: formatMonthYear(e.month, e.year),
@@ -78,6 +85,10 @@ export function ChartsPage() {
       balance: toNumber(e.actual_balance),
       plannedBalance: toNumber(e.projected_balance),
     })) ?? [];
+
+  const topItemsData =
+    topItems?.items.map((i) => ({ label: i.label, value: toNumber(i.total) })) ??
+    [];
 
   // ── Monthly tab data ─────────────────────────
   const { data: chartData, isLoading } = useQuery({
@@ -236,6 +247,41 @@ export function ChartsPage() {
                 </LineChart>
               </ResponsiveContainer>
             </ChartContainer>
+
+            {/* ── Top expense rows across all budgets ── */}
+            {topItemsData.length > 0 && (
+              <ChartContainer title="Top Expense Rows (all budgets, IST)">
+                <ResponsiveContainer
+                  width="100%"
+                  height={Math.max(350, topItemsData.length * 34 + 60)}
+                >
+                  <BarChart
+                    data={topItemsData}
+                    layout="vertical"
+                    margin={{ left: 8, right: 24 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis type="number" fontSize={12} />
+                    <YAxis
+                      type="category"
+                      dataKey="label"
+                      width={130}
+                      fontSize={12}
+                    />
+                    <Tooltip
+                      formatter={(value) => formatCurrency(Number(value))}
+                      contentStyle={CHART_TOOLTIP_STYLE}
+                    />
+                    <Bar
+                      dataKey="value"
+                      name="Spent (IST)"
+                      fill={SERIES_COLORS.Projected}
+                      radius={[0, 4, 4, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            )}
           </div>
         )
       ) : (

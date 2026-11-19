@@ -180,3 +180,103 @@ class TestChartData:
         assert Decimal(ive["projected"]) == Decimal("1420.00")
         # actual: 2800 - 1425 = 1375
         assert Decimal(ive["actual"]) == Decimal("1375.00")
+
+
+class TestTopItems:
+    """GET /api/budgets/top-items — rows ranked by summed actual spend."""
+
+    def test_ranks_rows_across_budgets(self, client, auth_headers, budget):
+        # Budget 1 (the `budget` fixture) with two rows
+        bid = budget["id"]
+        r = client.post(
+            f"/api/budgets/{bid}/categories",
+            json={"name": "Essen"},
+            headers=auth_headers,
+        )
+        cat = r.json()["id"]
+        client.post(
+            f"/api/categories/{cat}/items",
+            json={"label": "Lidl", "actual_cost": "120.50"},
+            headers=auth_headers,
+        )
+        client.post(
+            f"/api/categories/{cat}/items",
+            json={"label": "Aldi", "actual_cost": "80.00"},
+            headers=auth_headers,
+        )
+
+        # Budget 2: the same "Lidl" row again + another row
+        r = client.post(
+            "/api/budgets/",
+            json={"title": "Next Month", "month": 12, "year": 2026},
+            headers=auth_headers,
+        )
+        bid2 = r.json()["id"]
+        r = client.post(
+            f"/api/budgets/{bid2}/categories",
+            json={"name": "Essen"},
+            headers=auth_headers,
+        )
+        cat2 = r.json()["id"]
+        client.post(
+            f"/api/categories/{cat2}/items",
+            json={"label": "LIDL", "actual_cost": "30.25"},
+            headers=auth_headers,
+        )
+        client.post(
+            f"/api/categories/{cat2}/items",
+            json={"label": "Rewe", "actual_cost": "40.00"},
+            headers=auth_headers,
+        )
+
+        response = client.get("/api/budgets/top-items", headers=auth_headers)
+        assert response.status_code == 200
+        items = response.json()["items"]
+
+        # Same label across budgets aggregates case-insensitively:
+        # Lidl 120.50 + 30.25 = 150.75, Rewe 40.00, Aldi 80.00
+        assert [i["label"] for i in items] == ["Lidl", "Aldi", "Rewe"]
+        assert Decimal(items[0]["total"]) == Decimal("150.75")
+        assert items[0]["category"] == "Essen"
+        assert Decimal(items[1]["total"]) == Decimal("80.00")
+
+    def test_zero_spend_rows_excluded(self, client, auth_headers, budget):
+        bid = budget["id"]
+        r = client.post(
+            f"/api/budgets/{bid}/categories",
+            json={"name": "Essen"},
+            headers=auth_headers,
+        )
+        cat = r.json()["id"]
+        client.post(
+            f"/api/categories/{cat}/items",
+            json={"label": "Planned only", "projected_cost": "50"},
+            headers=auth_headers,
+        )
+
+        response = client.get("/api/budgets/top-items", headers=auth_headers)
+        assert response.status_code == 200
+        assert response.json()["items"] == []
+
+    def test_limit_respected(self, client, auth_headers, budget):
+        bid = budget["id"]
+        r = client.post(
+            f"/api/budgets/{bid}/categories",
+            json={"name": "Essen"},
+            headers=auth_headers,
+        )
+        cat = r.json()["id"]
+        for i in range(4):
+            client.post(
+                f"/api/categories/{cat}/items",
+                json={"label": f"Row{i}", "actual_cost": str(10 + i)},
+                headers=auth_headers,
+            )
+
+        response = client.get(
+            "/api/budgets/top-items", params={"limit": 2}, headers=auth_headers
+        )
+        assert response.status_code == 200
+        items = response.json()["items"]
+        assert len(items) == 2
+        assert [i["label"] for i in items] == ["Row3", "Row2"]

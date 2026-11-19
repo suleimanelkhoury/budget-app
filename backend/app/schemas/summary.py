@@ -84,6 +84,21 @@ class CategoryTrendResponse(BaseModel):
     months: list[ChartDataPoint]
 
 
+class TopItem(BaseModel):
+    """A single expense row aggregated across all of a user's budgets."""
+
+    label: str
+    # Category of the row's first occurrence (display context)
+    category: str
+    total: Decimal
+
+
+class TopItemsResponse(BaseModel):
+    """Expense rows ranked by summed actual spending across all budgets."""
+
+    items: list[TopItem]
+
+
 class BudgetComparisonEntry(BaseModel):
     """A single budget's totals within a multi-month comparison."""
 

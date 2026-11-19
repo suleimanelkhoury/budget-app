@@ -24,6 +24,8 @@ from app.schemas.summary import (
     BudgetComparison,
     CategoryTrendResponse,
     ChartDataPoint,
+    TopItem,
+    TopItemsResponse,
     YearlyComparison,
 )
 from app.services.excel_export import build_budget_excel
@@ -127,6 +129,51 @@ def category_trend(
         )
 
     return CategoryTrendResponse(category_name=category, months=trend)
+
+
+@router.get(
+    "/top-items",
+    response_model=TopItemsResponse,
+    summary="Expense rows ranked by summed actual spending across all budgets",
+)
+def top_items(
+    limit: int = Query(default=10, ge=1, le=50),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> TopItemsResponse:
+    """Rank expense rows by their summed actual cost across ALL budgets.
+
+    Rows with the same label (e.g. "Lidl" recurring every month) are
+    aggregated, so the ranking shows which row the user spends the most
+    on overall. Rows with zero total spending are excluded. Labels are
+    matched case-insensitively; the first-seen spelling and category are
+    returned for display.
+    """
+    # key (lowercased label) -> (total, category, display label)
+    totals: dict[str, tuple[Decimal, str, str]] = {}
+    budgets = sorted(current_user.budgets, key=lambda b: (b.year, b.month))
+    for budget in budgets:
+        for category in budget.categories:
+            for item in category.items:
+                key = item.label.strip().lower()
+                if key in totals:
+                    total, cat, label = totals[key]
+                    totals[key] = (total + item.actual_cost, cat, label)
+                else:
+                    totals[key] = (item.actual_cost, category.name, item.label)
+
+    ranked = sorted(
+        (entry for entry in totals.values() if entry[0] > 0),
+        key=lambda entry: entry[0],
+        reverse=True,
+    )[:limit]
+
+    return TopItemsResponse(
+        items=[
+            TopItem(label=label, category=category, total=total)
+            for total, category, label in ranked
+        ]
+    )
 
 
 @router.post(

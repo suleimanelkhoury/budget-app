@@ -149,6 +149,17 @@ export interface CategoryTrend {
   months: ChartDataPoint[];
 }
 
+// ── Top Items (all budgets) ──────────────────
+export interface TopItem {
+  label: string;
+  category: string;
+  total: string;
+}
+
+export interface TopItemsResponse {
+  items: TopItem[];
+}
+
 // ── Multi-month Comparison ───────────────────
 export interface BudgetComparisonEntry {
   budget_id: number;

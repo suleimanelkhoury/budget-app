@@ -1,8 +1,19 @@
 # frekl.
 
-A full-stack monthly budgeting application that mirrors a personal Excel budget sheet — with projected (SOLL) vs. actual (IST) tracking, category subtotals, balance calculations, charts, and Excel import.
+A self-hosted personal finance manager — plan your money, track it, and understand it. frekl. keeps projected (SOLL) vs. actual (IST) budgets across categories, computes balances, and turns your finances into charts you can actually read.
 
 Built with **React + TypeScript + Vite** on the frontend and **FastAPI + SQLAlchemy** on the backend, backed by **PostgreSQL**.
+
+---
+
+## Features
+
+- **Monthly budgets** — projected (SOLL) vs. actual (IST) per category, with subtotals, differences, and grand totals
+- **Excel import** — started life as a digital twin of a personal Excel budget sheet, and still speaks its language: import existing sheets instead of retyping them
+- **Balance & income tracking** — income, extra income, and running balance at a glance
+- **Charts** — income/expenses/balance over time, category spending with year-over-year comparison, and category breakdowns
+- **Calculator** — plan ahead: model income and expense changes and see the effect on your balance before they happen
+- **Multi-user & secure** — JWT auth with server-side revocation, rate limiting, self-hostable with Docker
 
 ---
 

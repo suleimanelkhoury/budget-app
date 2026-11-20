@@ -31,6 +31,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { budgetsApi, expenseItemsApi, incomeApi } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Spinner } from '../components/Spinner';
@@ -38,6 +39,7 @@ import { evaluateExpression, isOperatorChar } from '../utils/calculator';
 import { formatCurrency, formatDateTime, formatDifference, formatRelativeTime, toNumber } from '../utils/format';
 import { balanceColor } from '../utils/balance';
 import { queryKeys, invalidateBudgetData } from '../utils/queryKeys';
+import i18n from '../i18n';
 import type {
   BudgetDetail,
   BudgetSummary,
@@ -87,7 +89,7 @@ function apiErrorMessage(err: unknown): string {
   const message = (
     err as { response?: { data?: { error?: { message?: string } } } }
   )?.response?.data?.error?.message;
-  return message ?? 'Something went wrong. Please try again.';
+  return message ?? i18n.t('common.errors.generic');
 }
 
 const OP_SYMBOL: Record<Op, string> = {
@@ -111,6 +113,7 @@ type DeleteTarget = {
 };
 
 export function CalculatorPage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   // ── Budget selection ─────────────────────────
   const [selectedBudgetId, setSelectedBudgetId] = useState<number | null>(
@@ -170,7 +173,7 @@ export function CalculatorPage() {
 
   const handleCreateRow = (categoryId: number, label: string) => {
     if (!label) {
-      setCreateError('Enter a name for the new row.');
+      setCreateError(t('calculator.errors.newRowNameRequired'));
       return;
     }
     createItemMutation.mutate({ categoryId, label });
@@ -189,7 +192,7 @@ export function CalculatorPage() {
       }}
     >
       <h1 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">
-        Calculator
+        {t('calculator.title')}
       </h1>
 
       {/* ── Budget selector ─────────────────────── */}
@@ -198,7 +201,7 @@ export function CalculatorPage() {
           htmlFor="calc-budget"
           className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
         >
-          Active Budget
+          {t('calculator.budgetSelector.label')}
         </label>
         <select
           id="calc-budget"
@@ -220,9 +223,13 @@ export function CalculatorPage() {
         {budget && (
           <p
             className="mt-1.5 text-xs text-gray-500 dark:text-gray-400"
-            title={`Last edited ${formatDateTime(budget.updated_at)}`}
+            title={t('calculator.budgetSelector.lastEditedTitle', {
+              time: formatDateTime(budget.updated_at),
+            })}
           >
-            Last edited: {formatRelativeTime(budget.updated_at)}
+            {t('calculator.budgetSelector.lastEdited', {
+              time: formatRelativeTime(budget.updated_at),
+            })}
           </p>
         )}
       </div>
@@ -298,6 +305,7 @@ function BudgetOverview({
   onCreateRow: (categoryId: number, label: string) => void;
   onCancelNewRow: () => void;
 }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   // Row deletion (the "−" next to the selected row), with confirm
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
@@ -358,7 +366,7 @@ function BudgetOverview({
     if (!renaming) return;
     const label = renameValue.trim();
     if (!label) {
-      setRenameError('Enter a name.');
+      setRenameError(t('calculator.errors.nameRequired'));
       return;
     }
     renameRowMutation.mutate({ ...renaming, label });
@@ -378,7 +386,7 @@ function BudgetOverview({
         <section className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
           <div className="flex items-baseline justify-between">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-              Balance
+              {t('calculator.balance.title')}
             </h2>
             <span className="text-right">
               <span
@@ -390,7 +398,7 @@ function BudgetOverview({
                 {formatCurrency(summary.actual_balance)}
               </span>
               <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">
-                ≠ from SOLL{' '}
+                {t('calculator.balance.diffFromSoll')}{' '}
                 <span
                   className={balanceColor(
                     toNumber(summary.balance_difference),
@@ -407,11 +415,11 @@ function BudgetOverview({
       {/* ── Incomes ───────────────────────────── */}
       <section className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-          Income
+          {t('calculator.income.title')}
         </h2>
         {budget.incomes.length === 0 ? (
           <p className="mt-2 text-sm text-gray-400 dark:text-gray-500">
-            No income rows.
+            {t('calculator.income.empty')}
           </p>
         ) : (
           <ul className="mt-2 space-y-1">
@@ -464,7 +472,7 @@ function BudgetOverview({
                         onDoubleClick={() =>
                           startRename('income', income.id, income.label)
                         }
-                        title="Click to select — double-click to rename"
+                        title={t('calculator.row.clickToSelect')}
                         className={`flex flex-1 items-baseline justify-between rounded-lg px-2 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
                           isSelected
                             ? 'bg-brand-100 ring-1 ring-brand-400 dark:bg-brand-900/50 dark:ring-brand-500'
@@ -533,7 +541,9 @@ function BudgetOverview({
             setDeleteTarget({
               id: item.id,
               label: item.label,
-              context: `category ${category.name}`,
+              context: t('calculator.deleteDialog.context', {
+                category: category.name,
+              }),
             })
           }
         />
@@ -542,15 +552,18 @@ function BudgetOverview({
       {/* ── Delete-row confirmation ───────────── */}
       {deleteTarget && (
         <ConfirmDialog
-          title="Delete row"
+          title={t('calculator.deleteDialog.title')}
           message={
-            <>
-              Delete <strong>{deleteTarget.label}</strong> (
-              {deleteTarget.context})? Its amounts will be removed from the
-              budget.
-            </>
+            <Trans
+              i18nKey="calculator.deleteDialog.message"
+              values={{
+                label: deleteTarget.label,
+                context: deleteTarget.context,
+              }}
+              components={[<strong key="0" />]}
+            />
           }
-          confirmLabel="Delete"
+          confirmLabel={t('common.actions.delete')}
           isPending={deleteRowMutation.isPending}
           errorMessage={deleteError}
           onConfirm={() => deleteRowMutation.mutate(deleteTarget)}
@@ -602,6 +615,7 @@ function CategoryOverviewCard({
   renameError: string | null;
   onRequestDelete: (item: ExpenseItem) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <section
       className={`rounded-2xl border bg-white p-4 dark:bg-gray-800 ${
@@ -617,7 +631,9 @@ function CategoryOverviewCard({
         <button
           type="button"
           onClick={() => onAddRow(category.id)}
-          title={`Add a row to ${category.name}`}
+          title={t('calculator.category.addRowTitle', {
+            category: category.name,
+          })}
           className="rounded-lg bg-brand-50 px-2 py-0.5 text-sm font-semibold leading-5 text-brand-600 hover:bg-brand-100 dark:bg-brand-900/40 dark:text-brand-300 dark:hover:bg-brand-900/60"
         >
           ＋
@@ -625,7 +641,7 @@ function CategoryOverviewCard({
       </div>
       {category.items.length === 0 && !isPendingNewTarget ? (
         <p className="mt-2 text-sm text-gray-400 dark:text-gray-500">
-          No rows yet.
+          {t('calculator.category.empty')}
         </p>
       ) : (
         <ul className="mt-2 space-y-1">
@@ -674,7 +690,7 @@ function CategoryOverviewCard({
                       type="button"
                       onClick={() => onSelectItem(rowId)}
                       onDoubleClick={() => onRenameStart(item)}
-                      title="Click to select — double-click to rename"
+                      title={t('calculator.row.clickToSelect')}
                       className={`flex flex-1 items-baseline justify-between rounded-lg px-2 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
                         isSelected
                           ? 'bg-brand-100 ring-1 ring-brand-400 dark:bg-brand-900/50 dark:ring-brand-500'
@@ -710,7 +726,9 @@ function CategoryOverviewCard({
                       <button
                         type="button"
                         onClick={() => onRequestDelete(item)}
-                        title={`Delete ${item.label}`}
+                        title={t('calculator.row.deleteTitle', {
+                          label: item.label,
+                        })}
                         className="rounded-lg bg-red-50 px-2 py-1.5 text-sm font-semibold text-red-600 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50"
                       >
                         −
@@ -739,7 +757,7 @@ function CategoryOverviewCard({
               onCancelNewRow();
             }
           }}
-          placeholder="Row name, e.g. Lidl — Enter creates it"
+          placeholder={t('calculator.newRow.placeholder')}
           className="mt-2 w-full rounded-lg border border-brand-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-brand-700 dark:bg-gray-900 dark:text-gray-100"
         />
       )}
@@ -760,6 +778,7 @@ function CalculatorPanel({
   selectedRow: string;
   onDeselectRow: () => void;
 }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const categories = budget.categories ?? [];
 
@@ -891,7 +910,7 @@ function CalculatorPanel({
     if (!expr) return;
     const value = evaluateExpression(expr);
     if (value === null) {
-      setError('Incomplete expression — e.g. 23.40+5.');
+      setError(t('calculator.messages.incompleteExpression'));
       return;
     }
     setInput(round2(value).toFixed(2));
@@ -946,11 +965,11 @@ function CalculatorPanel({
 
   const commit = () => {
     if (!selectedRow) {
-      setError('Choose a row first (click it on the left).');
+      setError(t('calculator.messages.chooseRowFirst'));
       return;
     }
     if (pendingAmount === null) {
-      setError('Enter an amount (e.g. 5 or +5) first.');
+      setError(t('calculator.messages.amountRequired'));
       return;
     }
     if (!target) return;
@@ -986,11 +1005,17 @@ function CalculatorPanel({
         };
         roundNote =
           direction > 0
-            ? ` — ${formatCurrency(diff)} to ${msci.label}`
-            : ` — ${formatCurrency(diff)} from ${msci.label}`;
+            ? t('calculator.flash.toMsci', {
+                amount: formatCurrency(diff),
+                label: msci.label,
+              })
+            : t('calculator.flash.fromMsci', {
+                amount: formatCurrency(diff),
+                label: msci.label,
+              });
       } else if (direction !== 0) {
         applied = roundUpToEuro(raw);
-        roundNote = ' (rounded up)';
+        roundNote = t('calculator.flash.roundedUp');
       }
     }
 
@@ -1019,7 +1044,12 @@ function CalculatorPanel({
       });
     }
     setFlash(
-      `Set "${label}" ${field === 'ist' ? '(IST)' : '(SOLL)'} to ${formatCurrency(amount)} (was ${formatCurrency(previous)}).${roundNote}`,
+      t('calculator.flash.set', {
+        label,
+        field: field === 'ist' ? 'IST' : 'SOLL',
+        amount: formatCurrency(amount),
+        previous: formatCurrency(previous),
+      }) + roundNote,
     );
 
     setInput('');
@@ -1118,11 +1148,17 @@ function CalculatorPanel({
       if (msci && !isSelf && direction !== 0) {
         note =
           direction > 0
-            ? ` (+${formatCurrency(diff)} → ${msci.label})`
-            : ` (−${formatCurrency(diff)} from ${msci.label})`;
+            ? t('calculator.preview.toMsci', {
+                amount: formatCurrency(diff),
+                label: msci.label,
+              })
+            : t('calculator.preview.fromMsci', {
+                amount: formatCurrency(diff),
+                label: msci.label,
+              });
       } else if (direction !== 0) {
         amount = roundUpToEuro(raw);
-        note = ' (rounded up)';
+        note = t('calculator.preview.roundedUp');
       }
     }
     if (target) {
@@ -1130,10 +1166,22 @@ function CalculatorPanel({
       if (op) {
         const typed = evaluateExpression(input);
         if (typed !== null) {
-          return `${formatCurrency(current)} ${OP_SYMBOL[op]} ${formatCurrency(round2(typed))} = ${formatCurrency(amount)}${note}`;
+          return (
+            t('calculator.preview.operation', {
+              current: formatCurrency(current),
+              op: OP_SYMBOL[op],
+              typed: formatCurrency(round2(typed)),
+              amount: formatCurrency(amount),
+            }) + note
+          );
         }
       }
-      return `${formatCurrency(current)} → ${formatCurrency(amount)}${note}`;
+      return (
+        t('calculator.preview.set', {
+          current: formatCurrency(current),
+          amount: formatCurrency(amount),
+        }) + note
+      );
     }
     return null;
   })();
@@ -1173,8 +1221,8 @@ function CalculatorPanel({
             }}
             title={
               field === 'ist'
-                ? 'Editing the actual value (IST) — click for planned (SOLL)'
-                : 'Editing the planned value (SOLL) — click for actual (IST)'
+                ? t('calculator.tooltips.istTag')
+                : t('calculator.tooltips.sollTag')
             }
             className="break-all font-mono text-xl text-white/40 transition-colors hover:text-white/80"
           >
@@ -1227,7 +1275,7 @@ function CalculatorPanel({
             setRoundUp((r) => !r);
             setError(null);
           }}
-          title="Round the applied amount up to the next full euro (14.51 → 15.00, 3.00 → 4.00)"
+          title={t('calculator.tooltips.roundUp')}
           className={`rounded-xl py-3 text-lg font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
             roundUp
               ? 'bg-emerald-600 text-white hover:bg-emerald-700'
@@ -1241,7 +1289,7 @@ function CalculatorPanel({
           className={calcButtonClass('op')}
           onClick={() => pressOperator('/')}
           disabled={seedValue === null}
-          title="Divide the row value"
+          title={t('calculator.tooltips.divide')}
         >
           ÷
         </button>
@@ -1261,7 +1309,7 @@ function CalculatorPanel({
           className={calcButtonClass('op')}
           onClick={() => pressOperator('*')}
           disabled={seedValue === null}
-          title="Multiply the row value"
+          title={t('calculator.tooltips.multiply')}
         >
           ×
         </button>
@@ -1281,7 +1329,7 @@ function CalculatorPanel({
           className={calcButtonClass('op')}
           onClick={() => pressOperator('-')}
           disabled={seedValue === null}
-          title="Subtract from the row value"
+          title={t('calculator.tooltips.subtract')}
         >
           −
         </button>
@@ -1301,7 +1349,7 @@ function CalculatorPanel({
           className={calcButtonClass('op')}
           onClick={() => pressOperator('+')}
           disabled={seedValue === null}
-          title="Add to the row value"
+          title={t('calculator.tooltips.add')}
         >
           +
         </button>
@@ -1318,7 +1366,7 @@ function CalculatorPanel({
           className={calcButtonClass('equals')}
           onClick={commit}
           disabled={!canCommit}
-          title="Apply to the selected row (Enter)"
+          title={t('calculator.tooltips.apply')}
         >
           ⏎
         </button>
@@ -1327,7 +1375,7 @@ function CalculatorPanel({
           className={calcButtonClass('op')}
           onClick={evaluate}
           disabled={!input && !op}
-          title="Evaluate in place (=)"
+          title={t('calculator.tooltips.evaluate')}
         >
           =
         </button>

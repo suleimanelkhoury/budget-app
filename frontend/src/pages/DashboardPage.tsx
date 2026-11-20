@@ -9,6 +9,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { lazy, Suspense, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { budgetsApi } from '../api';
+import { useTranslation } from 'react-i18next';
 import { BudgetCard } from '../components/BudgetCard';
 import { DashboardSummary } from '../components/DashboardSummary';
 import { Spinner } from '../components/Spinner';
@@ -26,6 +27,7 @@ const ExcelImportModal = lazy(() =>
 );
 
 export function DashboardPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showImportModal, setShowImportModal] = useState(false);
@@ -101,20 +103,20 @@ export function DashboardPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Your Budgets
+          {t('dashboard.title')}
         </h1>
         <div className="flex gap-3">
           <button
             onClick={() => setShowImportModal(true)}
             className={`${neutralButtonClass} inline-flex items-center gap-2`}
           >
-            <UploadIcon size={14} /> Import Excel
+            <UploadIcon size={14} /> {t('dashboard.actions.importExcel')}
           </button>
           <button
             onClick={() => setShowCreateForm(true)}
             className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-700"
           >
-            + New Budget
+            {t('dashboard.actions.newBudget')}
           </button>
         </div>
       </div>
@@ -123,12 +125,12 @@ export function DashboardPage() {
       {showCreateForm && (
         <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-            Create New Budget
+            {t('dashboard.create.heading')}
           </h2>
           <form onSubmit={handleCreate} className="flex flex-wrap gap-4">
             <div className="flex-1">
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Title
+                {t('dashboard.create.titleLabel')}
               </label>
               <input
                 type="text"
@@ -136,14 +138,14 @@ export function DashboardPage() {
                 onChange={(e) =>
                   setNewBudget({ ...newBudget, title: e.target.value })
                 }
-                placeholder="e.g. Juli 2026"
+                placeholder={t('dashboard.create.titlePlaceholder')}
                 required
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
               />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Month
+                {t('dashboard.create.monthLabel')}
               </label>
               <select
                 value={newBudget.month}
@@ -164,7 +166,7 @@ export function DashboardPage() {
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Year
+                {t('dashboard.create.yearLabel')}
               </label>
               <input
                 type="number"
@@ -183,14 +185,16 @@ export function DashboardPage() {
                 disabled={createMutation.isPending}
                 className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-700 disabled:opacity-50"
               >
-                {createMutation.isPending ? 'Creating…' : 'Create'}
+                {createMutation.isPending
+                  ? t('dashboard.create.submitting')
+                  : t('dashboard.create.submit')}
               </button>
               <button
                 type="button"
                 onClick={() => setShowCreateForm(false)}
                 className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
               >
-                Cancel
+                {t('common.actions.cancel')}
               </button>
             </div>
           </form>
@@ -201,8 +205,7 @@ export function DashboardPage() {
       <DashboardSummary />
 
       {/* ── Budget grid ───────────────────────── */}
-      {archiveBudgets.length > 0 ? (
-        <div className="space-y-6">
+      {archiveBudgets.length > 0 ? (        <div className="space-y-6">
           {archiveYears.map((year) => {
             const yearBudgets = archiveBudgets
               .filter((b) => b.year === year)
@@ -227,8 +230,9 @@ export function DashboardPage() {
                   {year}
                 </h2>
                 <span className="text-sm text-gray-500 dark:text-gray-500">
-                  {yearBudgets.length}{' '}
-                  {yearBudgets.length === 1 ? 'budget' : 'budgets'}
+                  {t('dashboard.archive.budgetCount', {
+                    count: yearBudgets.length,
+                  })}
                 </span>
               </button>
               {!collapsed && (
@@ -249,8 +253,7 @@ export function DashboardPage() {
       ) : (
         <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center dark:border-gray-700 dark:bg-gray-800">
           <p className="text-gray-500 dark:text-gray-500">
-            No budgets yet. Create a new budget or import from Excel to get
-            started.
+            {t('dashboard.archive.empty')}
           </p>
         </div>
       )}

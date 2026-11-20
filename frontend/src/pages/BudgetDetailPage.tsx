@@ -7,6 +7,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { budgetsApi, categoriesApi, incomeApi } from '../api';
 import { CategorySection } from '../components/CategorySection';
@@ -23,6 +24,7 @@ import { CalendarDaysIcon, DownloadIcon, SearchIcon, Trash2Icon, XIcon } from '.
 export function BudgetDetailPage() {
   const { id } = useParams<{ id: string }>();
   const budgetId = parseInt(id ?? '0');
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [showAddCategory, setShowAddCategory] = useState(false);
@@ -152,12 +154,14 @@ export function BudgetDetailPage() {
   if (!budget) {
     return (
       <div className="text-center">
-        <p className="text-gray-500 dark:text-gray-500">Budget not found.</p>
+        <p className="text-gray-500 dark:text-gray-500">
+          {t('detail.page.notFound')}
+        </p>
         <Link
           to="/"
           className="text-brand-600 hover:underline dark:text-brand-400"
         >
-          Back to Dashboard
+          {t('detail.page.backToDashboard')}
         </Link>
       </div>
     );
@@ -193,7 +197,7 @@ export function BudgetDetailPage() {
             to="/"
             className="mb-1 inline-block text-sm text-gray-500 hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300"
           >
-            ← Back to Dashboard
+            {t('detail.page.backToDashboard')}
           </Link>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             {budget.title}
@@ -204,22 +208,22 @@ export function BudgetDetailPage() {
           <button
             onClick={() => setShowCloneForm(!showCloneForm)}
             className={`${neutralButtonClass} inline-flex items-center gap-2`}
-            title="Clone this budget for a new month (recurring expenses)"
+            title={t('detail.page.cloneTooltip')}
           >
-            <CalendarDaysIcon size={14} /> Clone to New Month
+            <CalendarDaysIcon size={14} /> {t('detail.page.cloneButton')}
           </button>
           {/* ── Export to Excel ──────────────────── */}
           <button
             onClick={() => exportMutation.mutate()}
             disabled={exportMutation.isPending}
             className={`${neutralButtonClass} inline-flex items-center gap-2 disabled:opacity-50`}
-            title="Export this budget to an Excel file (same format as the import template)"
+            title={t('detail.page.exportTooltip')}
           >
             {exportMutation.isPending ? (
-              'Exporting…'
+              t('detail.page.exporting')
             ) : (
               <>
-                <DownloadIcon size={14} /> Export Excel
+                <DownloadIcon size={14} /> {t('detail.page.exportButton')}
               </>
             )}
           </button>
@@ -227,9 +231,9 @@ export function BudgetDetailPage() {
           <button
             onClick={() => setShowDeleteConfirm(true)}
             className="rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-800 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-950"
-            title="Delete this budget and all its data"
+            title={t('detail.page.deleteTooltip')}
           >
-            <Trash2Icon size={14} /> Delete
+            <Trash2Icon size={14} /> {t('detail.page.deleteButton')}
           </button>
           {/* ── Search bar ─────────────────────────── */}
           <div className="relative">
@@ -237,7 +241,7 @@ export function BudgetDetailPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search items…"
+              placeholder={t('detail.page.searchPlaceholder')}
               className="w-48 rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-brand-500 focus:outline-none sm:w-64 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
             />
             <span className="absolute left-3 top-2.5 text-gray-400 dark:text-gray-500">
@@ -267,20 +271,19 @@ export function BudgetDetailPage() {
       {/* ── Delete confirmation modal ──────────── */}
       {showDeleteConfirm && (
         <ConfirmDialog
-          title="Delete Budget"
+          title={t('detail.page.deleteDialogTitle')}
           message={
-            <>
-              Are you sure you want to delete{' '}
-              <span className="font-semibold">{budget.title}</span>? This will
-              permanently remove all categories, expense items, and income
-              entries. This action cannot be undone.
-            </>
+            <Trans
+              i18nKey="detail.page.deleteConfirmMessage"
+              values={{ title: budget.title }}
+              components={{ strong: <span className="font-semibold" /> }}
+            />
           }
-          confirmLabel="Delete Budget"
+          confirmLabel={t('detail.page.deleteConfirmLabel')}
           isPending={deleteMutation.isPending}
           errorMessage={
             deleteMutation.isError
-              ? 'Failed to delete budget. Please try again.'
+              ? t('detail.page.deleteErrorMessage')
               : null
           }
           onConfirm={() => deleteMutation.mutate(budgetId)}
@@ -295,7 +298,7 @@ export function BudgetDetailPage() {
             onClick={() => setShowAddIncome(!showAddIncome)}
             className="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
           >
-            + Add Income
+            {t('detail.page.addIncome')}
           </button>
         </div>
         {showAddIncome && (
@@ -312,7 +315,7 @@ export function BudgetDetailPage() {
               onChange={(e) =>
                 setNewIncome({ ...newIncome, label: e.target.value })
               }
-              placeholder="Income label (e.g. Einkommen)"
+              placeholder={t('detail.page.incomeLabelPlaceholder')}
               required
               className="flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
             />
@@ -347,7 +350,7 @@ export function BudgetDetailPage() {
               disabled={addIncomeMutation.isPending}
               className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
             >
-              Add
+              {t('detail.page.add')}
             </button>
           </form>
         )}
@@ -358,13 +361,13 @@ export function BudgetDetailPage() {
       <div className="mb-4">
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Categories
+            {t('detail.page.categoriesHeading')}
           </h2>
           <button
             onClick={() => setShowAddCategory(!showAddCategory)}
             className="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
           >
-            + Add Category
+            {t('detail.page.addCategory')}
           </button>
         </div>
         {showAddCategory && (
@@ -381,7 +384,7 @@ export function BudgetDetailPage() {
               onChange={(e) =>
                 setNewCategory({ ...newCategory, name: e.target.value })
               }
-              placeholder="Category name (e.g. Wohnen)"
+              placeholder={t('detail.page.categoryNamePlaceholder')}
               required
               className="flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
             />
@@ -390,7 +393,7 @@ export function BudgetDetailPage() {
               disabled={addCategoryMutation.isPending}
               className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
             >
-              Add
+              {t('detail.page.add')}
             </button>
           </form>
         )}
@@ -412,8 +415,8 @@ export function BudgetDetailPage() {
           <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-8 text-center dark:border-gray-700 dark:bg-gray-800">
             <p className="text-gray-500 dark:text-gray-500">
               {searchQuery
-                ? `No items found matching "${searchQuery}".`
-                : 'No categories yet. Add a category to start tracking expenses.'}
+                ? t('detail.page.noSearchResults', { query: searchQuery })
+                : t('detail.page.noCategories')}
             </p>
           </div>
         )}

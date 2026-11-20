@@ -1,8 +1,10 @@
+import i18n from '../i18n';
+
 /**
- * Formatting utilities — currency and date formatting with German locale.
- *
- * German number format: 1.234,56 €
- * German date format: "Juli 2026", "14. Juli 2026"
+ * Formatting utilities — currency and date formatting, following the
+ * UI language (see i18n): German (1.234,56 €, "14. Juli 2026") and
+ * English (€1,234.56, "14 July 2026", via en-IE so the currency stays
+ * the euro).
  */
 
 /**
@@ -13,6 +15,11 @@
  * toNumber("900.00")   // 900
  * toNumber("n/a")      // 0
  */
+/** The Intl locale matching the current UI language. */
+function intlLocale(): string {
+  return i18n.language.startsWith('de') ? 'de-DE' : 'en-IE';
+}
+
 export function toNumber(value: string | number): number {
   const num = typeof value === 'string' ? parseFloat(value) : value;
   return Number.isNaN(num) ? 0 : num;
@@ -32,7 +39,7 @@ export function toNumber(value: string | number): number {
 export function formatCurrency(value: string | number): string {
   const num = toNumber(value);
 
-  return new Intl.NumberFormat('de-DE', {
+  return new Intl.NumberFormat(intlLocale(), {
     style: 'currency',
     currency: 'EUR',
     minimumFractionDigits: 2,
@@ -48,7 +55,7 @@ export function formatCurrency(value: string | number): string {
  */
 export function formatMonthYear(month: number, year: number): string {
   const date = new Date(year, month - 1, 1);
-  return new Intl.DateTimeFormat('de-DE', {
+  return new Intl.DateTimeFormat(intlLocale(), {
     month: 'long',
     year: 'numeric',
   }).format(date);
@@ -63,7 +70,7 @@ export function formatMonthYear(month: number, year: number): string {
  */
 export function formatMonthShort(month: number, year: number): string {
   const date = new Date(year, month - 1, 1);
-  return new Intl.DateTimeFormat('de-DE', {
+  return new Intl.DateTimeFormat(intlLocale(), {
     month: 'short',
     year: '2-digit',
   }).format(date);
@@ -77,7 +84,7 @@ export function formatMonthShort(month: number, year: number): string {
  */
 export function formatDate(isoDate: string): string {
   const date = new Date(isoDate);
-  return new Intl.DateTimeFormat('de-DE', {
+  return new Intl.DateTimeFormat(intlLocale(), {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
@@ -86,7 +93,7 @@ export function formatDate(isoDate: string): string {
 
 /** Format a date as a German short time, e.g. "16:05". */
 function formatTime(date: Date): string {
-  return new Intl.DateTimeFormat('de-DE', {
+  return new Intl.DateTimeFormat(intlLocale(), {
     hour: '2-digit',
     minute: '2-digit',
   }).format(date);
@@ -103,9 +110,8 @@ export function formatDateTime(isoDate: string): string {
 }
 
 /**
- * Format an ISO date string relative to now, in English (the UI's
- * language). Falls back to the German long date for anything older
- * than a week.
+ * Format an ISO date string relative to now, in the UI language.
+ * Falls back to the long date for anything older than a week.
  *
  * @example
  * formatRelativeTime("2026-11-20T16:04:00")  // "just now" / "5 min ago"
@@ -115,13 +121,15 @@ export function formatDateTime(isoDate: string): string {
 export function formatRelativeTime(isoDate: string): string {
   const date = new Date(isoDate);
   const diffMinutes = Math.floor((Date.now() - date.getTime()) / 60000);
-  if (diffMinutes < 1) return 'just now';
-  if (diffMinutes < 60) return `${diffMinutes} min ago`;
+  if (diffMinutes < 1) return i18n.t('common.time.justNow');
+  if (diffMinutes < 60)
+    return i18n.t('common.time.minutesAgo', { count: diffMinutes });
   const diffHours = Math.floor(diffMinutes / 60);
-  if (diffHours < 24) return `${diffHours} h ago`;
-  if (diffHours < 48) return `yesterday, ${formatTime(date)}`;
+  if (diffHours < 24) return i18n.t('common.time.hoursAgo', { count: diffHours });
+  if (diffHours < 48)
+    return i18n.t('common.time.yesterday', { time: formatTime(date) });
   const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 7) return i18n.t('common.time.daysAgo', { count: diffDays });
   return formatDate(isoDate);
 }
 

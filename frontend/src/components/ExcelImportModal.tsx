@@ -12,6 +12,7 @@
 
 import { useRef, useState } from 'react';
 import type { AxiosError } from 'axios';
+import { useTranslation } from 'react-i18next';
 import * as XLSX from 'xlsx';
 import { budgetsApi } from '../api';
 import { Modal } from './Modal';
@@ -35,6 +36,7 @@ export function ExcelImportModal({
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { t } = useTranslation();
 
   if (!isOpen) return null;
 
@@ -43,7 +45,7 @@ export function ExcelImportModal({
     if (!selected) return;
 
     if (!selected.name.toLowerCase().endsWith('.xlsx')) {
-      setError('Please select an .xlsx file.');
+      setError(t('detail.excelImport.invalidFileType'));
       return;
     }
 
@@ -72,13 +74,13 @@ export function ExcelImportModal({
       const parsed = parseExcelPreview(rows, budgetSheet);
       setPreview(parsed);
     } catch {
-      setError('Could not read the Excel file. Please check the format.');
+      setError(t('detail.excelImport.readError'));
     }
   };
 
   const handleUpload = async () => {
     if (!file) {
-      setError('Please select a file first.');
+      setError(t('detail.excelImport.noFile'));
       return;
     }
 
@@ -94,7 +96,7 @@ export function ExcelImportModal({
       setError(
         apiMessage ??
           (typeof apiDetail === 'string' ? apiDetail : null) ??
-          'Import failed. Please try again.',
+          t('detail.excelImport.importFailed'),
       );
     } finally {
       setIsUploading(false);
@@ -110,7 +112,7 @@ export function ExcelImportModal({
 
   return (
     <Modal
-      title="Import Budget from Excel"
+      title={t('detail.excelImport.title')}
       onClose={handleClose}
       widthClassName="max-w-2xl"
     >
@@ -141,10 +143,10 @@ export function ExcelImportModal({
               ) : (
                 <>
                   <p className="text-sm text-gray-500 dark:text-gray-500">
-                    Click to select an Excel file
+                    {t('detail.excelImport.dropzoneSelect')}
                   </p>
                   <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-                    .xlsx format
+                    {t('detail.excelImport.dropzoneFormat')}
                   </p>
                 </>
               )}
@@ -154,7 +156,7 @@ export function ExcelImportModal({
                 onClick={handleClose}
                 className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
               >
-                Cancel
+                {t('common.actions.cancel')}
               </button>
             </div>
           </>
@@ -165,13 +167,19 @@ export function ExcelImportModal({
           <>
             <div className="mb-4">
               <h3 className="mb-1 text-sm font-semibold text-gray-900 dark:text-white">
-                Preview: {preview.title}
+                {t('detail.excelImport.previewTitle', {
+                  title: preview.title,
+                })}
               </h3>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                {preview.incomes.length} income entries,{' '}
-                {preview.categories.length} categories,{' '}
-                {preview.categories.reduce((sum, c) => sum + c.items.length, 0)}{' '}
-                expense items
+                {t('detail.excelImport.previewSummary', {
+                  incomes: preview.incomes.length,
+                  categories: preview.categories.length,
+                  items: preview.categories.reduce(
+                    (sum, c) => sum + c.items.length,
+                    0,
+                  ),
+                })}
               </p>
             </div>
 
@@ -179,7 +187,7 @@ export function ExcelImportModal({
             {preview.incomes.length > 0 && (
               <div className="mb-4">
                 <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  Income
+                  {t('detail.excelImport.incomeHeading')}
                 </h4>
                 <div className="rounded-lg border border-gray-200 dark:border-gray-700">
                   {preview.incomes.map((inc, i) => (
@@ -191,7 +199,10 @@ export function ExcelImportModal({
                         {inc.label}
                       </span>
                       <span className="text-gray-500 dark:text-gray-400">
-                        SOLL: {inc.projected} € | IST: {inc.actual} €
+                        {t('detail.excelImport.incomeAmounts', {
+                          projected: inc.projected,
+                          actual: inc.actual,
+                        })}
                       </span>
                     </div>
                   ))}
@@ -203,7 +214,7 @@ export function ExcelImportModal({
             {preview.categories.length > 0 && (
               <div className="mb-4">
                 <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  Categories
+                  {t('detail.excelImport.categoriesHeading')}
                 </h4>
                 <div className="space-y-2">
                   {preview.categories.map((cat, i) => (
@@ -212,7 +223,10 @@ export function ExcelImportModal({
                       className="rounded-lg border border-gray-200 dark:border-gray-700"
                     >
                       <div className="border-b border-gray-100 bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white">
-                        {cat.name} ({cat.items.length} items)
+                        {t('detail.excelImport.itemsCount', {
+                          name: cat.name,
+                          count: cat.items.length,
+                        })}
                       </div>
                       {cat.items.map((item, j) => (
                         <div
@@ -240,14 +254,16 @@ export function ExcelImportModal({
                 }}
                 className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
               >
-                Choose different file
+                {t('detail.excelImport.chooseDifferentFile')}
               </button>
               <button
                 onClick={handleUpload}
                 disabled={isUploading}
                 className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
               >
-                {isUploading ? 'Uploading…' : 'Confirm Import'}
+                {isUploading
+                  ? t('detail.excelImport.uploading')
+                  : t('detail.excelImport.confirmImport')}
               </button>
             </div>
           </>

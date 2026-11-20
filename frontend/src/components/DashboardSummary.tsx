@@ -25,6 +25,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { budgetsApi } from '../api';
 import { balanceColor } from '../utils/balance';
 import { formatCurrency, toNumber } from '../utils/format';
@@ -70,6 +71,7 @@ function StatTile({ label, value, valueClassName, title }: StatTileProps) {
 }
 
 export function DashboardSummary() {
+  const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
   // null = automatic: current year if it has budgets, else the newest
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
@@ -152,65 +154,74 @@ export function DashboardSummary() {
           type="button"
           onClick={() => setShowCategorySpending(true)}
           className={`${neutralButtonClass} inline-flex items-center gap-2`}
-          title={`Actual spending per category in ${activeYear}`}
+          title={t('dashboard.summary.categorySpendingTitle', {
+            year: activeYear,
+          })}
         >
-          <ChartPieIcon size={14} /> Category Spending
+          <ChartPieIcon size={14} /> {t('dashboard.summary.categorySpending')}
         </button>
       </div>
 
       {/* ── Row 1: money-flow overview ──────────── */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <StatTile
-          label="Overall Income"
+          label={t('dashboard.summary.overallIncome')}
           value={formatCurrency(ytdIncome)}
-          title={`New money in ${activeYear}, carryover excluded:\nOverall expenses + end-of-year balance − January carryover (${formatCurrency(startCarryover)})`}
+          title={t('dashboard.summary.overallIncomeTitle', {
+            year: activeYear,
+            carryover: formatCurrency(startCarryover),
+          })}
         />
         <StatTile
-          label="Overall Expenses (w/o investing)"
+          label={t('dashboard.summary.overallExpenses')}
           value={formatCurrency(ytdConsumption)}
-          title={`Consumption only — excludes ${formatCurrency(
-            invested,
-          )} transferred into investments (see the Investing row)`}
+          title={t('dashboard.summary.overallExpensesTitle', {
+            amount: formatCurrency(invested),
+          })}
         />
         <StatTile
-          label="Avg. Monthly Expenses (w/o investing)"
+          label={t('dashboard.summary.avgMonthlyExpenses')}
           value={formatCurrency(avgConsumption)}
-          title={`Average consumption across ${entries.length} budget${
-            entries.length === 1 ? '' : 's'
-          } in ${activeYear} — investments excluded`}
+          title={t('dashboard.summary.avgExpensesTitle', {
+            count: entries.length,
+            year: activeYear,
+          })}
         />
         <StatTile
-          label="End-of-Year Balance"
+          label={t('dashboard.summary.endOfYearBalance')}
           value={formatCurrency(currentBalance)}
           valueClassName={balanceColor(currentBalance)}
-          title={`Remaining cash as of ${latest.title}`}
+          title={t('dashboard.summary.balanceTitle', { title: latest.title })}
         />
       </div>
 
       {/* ── Row 2: investing ────────────────────── */}
       <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3">
         <StatTile
-          label="Overall Invested"
+          label={t('dashboard.summary.overallInvested')}
           value={formatCurrency(invested)}
           valueClassName="text-teal-600 dark:text-teal-400"
-          title={`Total transferred into investments (Investitionen category) in ${activeYear}`}
+          title={t('dashboard.summary.overallInvestedTitle', {
+            year: activeYear,
+          })}
         />
         <StatTile
-          label="Avg. Monthly Investing"
+          label={t('dashboard.summary.avgMonthlyInvesting')}
           value={formatCurrency(avgInvested)}
-          title={`Average across ${entries.length} budget${
-            entries.length === 1 ? '' : 's'
-          } in ${activeYear}`}
+          title={t('dashboard.summary.avgInvestingTitle', {
+            count: entries.length,
+            year: activeYear,
+          })}
         />
         <StatTile
-          label="Investing Rate"
+          label={t('dashboard.summary.investingRate')}
           value={investingRate === null ? '—' : `${investingRate.toFixed(1)} %`}
           valueClassName={
             investingRate === null
               ? undefined
               : 'text-teal-600 dark:text-teal-400'
           }
-          title={`Invested ÷ overall income (new money, carryover excluded). On average the same for every month.`}
+          title={t('dashboard.summary.investingRateTitle')}
         />
       </div>
 

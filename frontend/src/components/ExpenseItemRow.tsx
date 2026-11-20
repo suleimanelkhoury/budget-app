@@ -5,6 +5,7 @@
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { expenseItemsApi } from '../api';
 import { invalidateBudgetData } from '../utils/queryKeys';
 import { DifferenceBadge } from './DifferenceBadge';
@@ -18,6 +19,7 @@ interface ExpenseItemRowProps {
 }
 
 export function ExpenseItemRow({ item, budgetId }: ExpenseItemRowProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   const updateMutation = useMutation({
@@ -81,7 +83,7 @@ export function ExpenseItemRow({ item, budgetId }: ExpenseItemRowProps) {
         <button
           onClick={() => deleteMutation.mutate(item.id)}
           className="text-gray-400 hover:text-red-600"
-          title="Delete"
+          title={t('common.actions.delete')}
         >
           <Trash2Icon size={16} />
         </button>

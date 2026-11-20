@@ -8,6 +8,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import {
   Legend,
   Line,
@@ -36,6 +37,8 @@ export function CategoryDrillDownModal({
   categoryName,
   onClose,
 }: CategoryDrillDownModalProps) {
+  const { t } = useTranslation();
+
   // Detail (categories + items) — cached under the same key the budget
   // detail page uses.
   const { data: detail } = useQuery({
@@ -64,25 +67,27 @@ export function CategoryDrillDownModal({
 
   return (
     <Modal
-      title={`${categoryName} — Items`}
+      title={t('detail.drillDown.title', { name: categoryName })}
       onClose={onClose}
       widthClassName="max-w-2xl"
     >
       {!category ? (
-        <p className="text-sm text-gray-500 dark:text-gray-500">Loading…</p>
+        <p className="text-sm text-gray-500 dark:text-gray-500">
+          {t('detail.drillDown.loading')}
+        </p>
       ) : category.items.length === 0 ? (
         <p className="text-sm text-gray-500 dark:text-gray-500">
-          No items in this category.
+          {t('detail.drillDown.empty')}
         </p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-200 text-left text-gray-500 dark:border-gray-700 dark:text-gray-400">
-                <th className="py-2 pr-4 font-medium">Item</th>
+                <th className="py-2 pr-4 font-medium">{t('detail.drillDown.item')}</th>
                 <th className="py-2 font-medium text-right">SOLL</th>
                 <th className="py-2 font-medium text-right">IST</th>
-                <th className="py-2 font-medium text-right">Difference</th>
+                <th className="py-2 font-medium text-right">{t('detail.drillDown.difference')}</th>
               </tr>
             </thead>
             <tbody>
@@ -115,7 +120,7 @@ export function CategoryDrillDownModal({
       {/* ── 12-month trend for this category ── */}
       <div className="mt-5">
         <h4 className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-          Last 12 Months (SOLL vs IST)
+          {t('detail.drillDown.trendHeading')}
         </h4>
         {trendLoading ? (
           <Spinner />

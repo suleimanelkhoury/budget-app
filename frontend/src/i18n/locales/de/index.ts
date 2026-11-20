@@ -1,0 +1,25 @@
+/**
+ * German resources — assembled per area (mirrors en/index.ts).
+ */
+
+import common from './common';
+import nav from './nav';
+import auth from './auth';
+import settings from './settings';
+import calculator from './calculator';
+import dashboard from './dashboard';
+import charts from './charts';
+import detail from './detail';
+
+const de = {
+  common,
+  nav,
+  auth,
+  settings,
+  calculator,
+  dashboard,
+  charts,
+  detail,
+};
+
+export default de;

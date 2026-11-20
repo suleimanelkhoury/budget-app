@@ -8,6 +8,7 @@
 
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { XIcon } from './Icons';
 
 interface ModalProps {
@@ -27,6 +28,7 @@ export function Modal({
   widthClassName = 'max-w-lg',
   closeButton = true,
 }: ModalProps) {
+  const { t } = useTranslation();
   // Close with the Escape key
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -54,7 +56,7 @@ export function Modal({
               type="button"
               onClick={onClose}
               className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-              aria-label="Close dialog"
+              aria-label={t('common.actions.close')}
             >
               <XIcon size={16} />
             </button>

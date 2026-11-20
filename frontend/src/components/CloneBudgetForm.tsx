@@ -7,6 +7,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { budgetsApi } from '../api';
 import { formatMonthYear } from '../utils/format';
@@ -28,6 +29,7 @@ export function CloneBudgetForm({
 }: CloneBudgetFormProps) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Default the clone to the next month
   const nextMonth = budget.month === 12 ? 1 : budget.month + 1;
@@ -60,16 +62,15 @@ export function CloneBudgetForm({
       className="mb-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800"
     >
       <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-        Clone Budget for a New Month
+        {t('detail.clone.heading')}
       </h2>
       <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
-        Copies all categories, items, and income. Actual amounts are zeroed
-        out by default so you can fill them in for the new month.
+        {t('detail.clone.description')}
       </p>
       <div className="flex flex-wrap items-end gap-4">
         <div className="flex-1">
           <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            New budget title
+            {t('detail.clone.titleLabel')}
           </label>
           <input
             type="text"
@@ -83,7 +84,7 @@ export function CloneBudgetForm({
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Month
+            {t('detail.clone.monthLabel')}
           </label>
           <input
             type="number"
@@ -102,7 +103,7 @@ export function CloneBudgetForm({
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Year
+            {t('detail.clone.yearLabel')}
           </label>
           <input
             type="number"
@@ -130,21 +131,23 @@ export function CloneBudgetForm({
               })
             }
           />
-          Copy actual amounts too
+          {t('detail.clone.copyActuals')}
         </label>
         <button
           type="submit"
           disabled={cloneMutation.isPending}
           className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
         >
-          {cloneMutation.isPending ? 'Cloning…' : 'Clone Budget'}
+          {cloneMutation.isPending
+            ? t('detail.clone.cloning')
+            : t('detail.clone.submit')}
         </button>
         <button
           type="button"
           onClick={onClose}
           className={neutralButtonClass}
         >
-          Cancel
+          {t('common.actions.cancel')}
         </button>
       </div>
     </form>

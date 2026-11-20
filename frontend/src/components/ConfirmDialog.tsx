@@ -7,6 +7,7 @@
  */
 
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal } from './Modal';
 import { neutralButtonClass } from '../utils/ui';
 
@@ -27,12 +28,13 @@ export function ConfirmDialog({
   title,
   message,
   confirmLabel,
-  cancelLabel = 'Cancel',
+  cancelLabel,
   isPending,
   errorMessage,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const { t } = useTranslation();
   return (
     <Modal title={title} onClose={onCancel} closeButton={false}>
       <div className="mb-5 text-sm text-gray-600 dark:text-gray-300">
@@ -50,7 +52,7 @@ export function ConfirmDialog({
           disabled={isPending}
           className={neutralButtonClass}
         >
-          {cancelLabel}
+          {cancelLabel ?? t('common.actions.cancel')}
         </button>
         <button
           type="button"
@@ -58,7 +60,7 @@ export function ConfirmDialog({
           disabled={isPending}
           className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
         >
-          {isPending ? 'Deleting…' : confirmLabel}
+          {isPending ? t('common.actions.deleting') : confirmLabel}
         </button>
       </div>
     </Modal>

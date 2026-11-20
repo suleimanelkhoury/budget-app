@@ -7,6 +7,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { categoriesApi, expenseItemsApi } from '../api';
 import { invalidateBudgetData } from '../utils/queryKeys';
 import { balanceColor } from '../utils/balance';
@@ -22,6 +23,7 @@ interface CategorySectionProps {
 }
 
 export function CategorySection({ category, budgetId }: CategorySectionProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [showAddItem, setShowAddItem] = useState(false);
   const [newItem, setNewItem] = useState({
@@ -78,12 +80,12 @@ export function CategorySection({ category, budgetId }: CategorySectionProps) {
             onClick={() => setShowAddItem(!showAddItem)}
             className="rounded-md bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
           >
-            + Add Item
+            {t('detail.category.addItem')}
           </button>
           <button
             onClick={() => deleteCategoryMutation.mutate()}
             className="text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400"
-            title="Delete category"
+            title={t('detail.category.deleteTooltip')}
           >
             <Trash2Icon size={16} />
           </button>
@@ -100,7 +102,7 @@ export function CategorySection({ category, budgetId }: CategorySectionProps) {
             type="text"
             value={newItem.label}
             onChange={(e) => setNewItem({ ...newItem, label: e.target.value })}
-            placeholder="Item name"
+            placeholder={t('detail.category.itemPlaceholder')}
             required
             className="flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
           />
@@ -129,7 +131,7 @@ export function CategorySection({ category, budgetId }: CategorySectionProps) {
             disabled={addItemMutation.isPending}
             className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
           >
-            Add
+            {t('detail.page.add')}
           </button>
         </form>
       )}
@@ -139,10 +141,10 @@ export function CategorySection({ category, budgetId }: CategorySectionProps) {
         <table className="w-full min-w-[450px]">
           <thead>
             <tr className="text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-500">
-              <th className="px-5 py-2">Label</th>
+              <th className="px-5 py-2">{t('detail.category.label')}</th>
               <th className="px-5 py-2 text-right">SOLL</th>
               <th className="px-5 py-2 text-right">IST</th>
-              <th className="px-5 py-2 text-right">Diff</th>
+              <th className="px-5 py-2 text-right">{t('detail.category.diff')}</th>
               <th className="px-5 py-2"></th>
             </tr>
           </thead>
@@ -156,7 +158,7 @@ export function CategorySection({ category, budgetId }: CategorySectionProps) {
                   colSpan={5}
                   className="px-5 py-3 text-center text-sm text-gray-400 dark:text-gray-500"
                 >
-                  No items in this category.
+                  {t('detail.category.empty')}
                 </td>
               </tr>
             )}
@@ -165,7 +167,7 @@ export function CategorySection({ category, budgetId }: CategorySectionProps) {
           <tfoot>
             <tr className="border-t border-gray-200 bg-gray-50 font-medium dark:border-gray-700 dark:bg-gray-800">
               <td className="px-5 py-2 text-sm text-gray-700 dark:text-gray-300">
-                Zwischensumme
+                {t('detail.category.subtotal')}
               </td>
               <td className="px-5 py-2 text-right text-sm text-gray-900 dark:text-gray-100">
                 {formatCurrency(projectedSubtotal)}

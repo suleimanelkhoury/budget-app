@@ -5,6 +5,7 @@
  * SOLL BALANCE, IST BALANCE, and UNTERSCHIED.
  */
 
+import { useTranslation } from 'react-i18next';
 import { formatCurrency, formatDifference } from '../utils/format';
 import { toNumber } from '../utils/format';
 import { balanceColor } from '../utils/balance';
@@ -15,6 +16,7 @@ interface SummaryBarProps {
 }
 
 export function SummaryBar({ summary }: SummaryBarProps) {
+  const { t } = useTranslation();
   if (!summary) return null;
 
   const expenseDiff = toNumber(summary.expense_difference);
@@ -26,7 +28,7 @@ export function SummaryBar({ summary }: SummaryBarProps) {
         {/* SOLL GESAMTKOSTEN */}
         <div>
           <p className="text-xs text-gray-500 dark:text-gray-500">
-            SOLL GESAMTKOSTEN
+            {t('detail.summary.sollTotalCosts')}
           </p>
           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
             {formatCurrency(summary.total_projected_expenses)}
@@ -35,7 +37,7 @@ export function SummaryBar({ summary }: SummaryBarProps) {
         {/* IST GESAMTKOSTEN */}
         <div>
           <p className="text-xs text-gray-500 dark:text-gray-500">
-            IST GESAMTKOSTEN
+            {t('detail.summary.istTotalCosts')}
           </p>
           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
             {formatCurrency(summary.total_actual_expenses)}
@@ -44,7 +46,7 @@ export function SummaryBar({ summary }: SummaryBarProps) {
         {/* GESAMTUNTERSCHIED */}
         <div>
           <p className="text-xs text-gray-500 dark:text-gray-500">
-            GESAMTUNTERSCHIED
+            {t('detail.summary.totalDifference')}
           </p>
           <p className={`text-sm font-semibold ${balanceColor(expenseDiff)}`}>
             {formatDifference(summary.expense_difference)}
@@ -53,7 +55,7 @@ export function SummaryBar({ summary }: SummaryBarProps) {
         {/* SOLL BALANCE */}
         <div>
           <p className="text-xs text-gray-500 dark:text-gray-500">
-            SOLL BALANCE
+            {t('detail.summary.sollBalance')}
           </p>
           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
             {formatCurrency(summary.projected_balance)}
@@ -62,7 +64,7 @@ export function SummaryBar({ summary }: SummaryBarProps) {
         {/* IST BALANCE */}
         <div>
           <p className="text-xs text-gray-500 dark:text-gray-500">
-            IST BALANCE
+            {t('detail.summary.istBalance')}
           </p>
           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
             {formatCurrency(summary.actual_balance)}
@@ -71,7 +73,7 @@ export function SummaryBar({ summary }: SummaryBarProps) {
         {/* UNTERSCHIED */}
         <div>
           <p className="text-xs text-gray-500 dark:text-gray-500">
-            UNTERSCHIED
+            {t('detail.summary.difference')}
           </p>
           <p className={`text-sm font-semibold ${balanceColor(balanceDiff)}`}>
             {formatDifference(summary.balance_difference)}

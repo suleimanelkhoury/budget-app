@@ -8,6 +8,7 @@
 
 import { useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../hooks/useTheme';
 import {
@@ -23,15 +24,16 @@ import {
 import { LogoMark } from './Logo';
 
 const navItems = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboardIcon },
-  { to: '/charts', label: 'Charts', icon: ChartLineIcon },
-  { to: '/calculator', label: 'Calculator', icon: CalculatorIcon },
-  { to: '/settings', label: 'Settings', icon: SettingsIcon },
+  { to: '/', labelKey: 'nav.dashboard', icon: LayoutDashboardIcon },
+  { to: '/charts', labelKey: 'nav.charts', icon: ChartLineIcon },
+  { to: '/calculator', labelKey: 'nav.calculator', icon: CalculatorIcon },
+  { to: '/settings', labelKey: 'nav.settings', icon: SettingsIcon },
 ];
 
 export function Layout() {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -78,7 +80,7 @@ export function Layout() {
               }
             >
               <item.icon size={18} className="shrink-0" />
-              {item.label}
+              {t(item.labelKey)}
             </NavLink>
           ))}
         </nav>
@@ -108,8 +110,8 @@ export function Layout() {
               className="rounded-lg bg-gray-100 px-2.5 py-1.5 text-sm dark:bg-gray-800"
               title={
                 theme === 'light'
-                  ? 'Switch to dark mode'
-                  : 'Switch to light mode'
+                  ? t('common.theme.toDark')
+                  : t('common.theme.toLight')
               }
             >
               {theme === 'light' ? (
@@ -125,7 +127,7 @@ export function Layout() {
               onClick={handleLogout}
               className="rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
             >
-              Logout
+              {t('common.actions.logout')}
             </button>
           </div>
         </header>

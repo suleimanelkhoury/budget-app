@@ -14,6 +14,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Bar,
   BarChart,
@@ -107,6 +108,7 @@ function MedalBadge(props: {
 }
 
 export function ChartsPage() {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<ChartTab>('overall');
   const [selectedBudgetId, setSelectedBudgetId] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -232,7 +234,7 @@ export function ChartsPage() {
   return (
     <div>
       <h1 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">
-        Charts
+        {t('charts.title')}
       </h1>
 
       {/* ── Tabs ──────────────────────────────── */}
@@ -242,14 +244,14 @@ export function ChartsPage() {
           className={pillButtonClass(tab === 'overall')}
           onClick={() => setTab('overall')}
         >
-          Overall
+          {t('charts.tabs.overall')}
         </button>
         <button
           type="button"
           className={pillButtonClass(tab === 'monthly')}
           onClick={() => setTab('monthly')}
         >
-          Monthly
+          {t('charts.tabs.monthly')}
         </button>
       </div>
 
@@ -260,14 +262,13 @@ export function ChartsPage() {
         ) : overallData.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center dark:border-gray-700 dark:bg-gray-800">
             <p className="text-gray-500 dark:text-gray-500">
-              No budgets available. Create at least one budget to see
-              charts.
+              {t('charts.emptyState.overall')}
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6">
             {/* ── Income vs Expenses over time ────── */}
-            <ChartContainer title="Income vs Expenses (IST, plan dashed)">
+            <ChartContainer title={t('charts.charts.incomeVsExpenses.title')}>
               <ResponsiveContainer width="100%" height={350}>
                 <LineChart data={overallData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -281,7 +282,7 @@ export function ChartsPage() {
                   <Line
                     type="monotone"
                     dataKey="income"
-                    name="Income (Gehalt + Extra)"
+                    name={t('charts.series.incomeGehaltExtra')}
                     stroke={SERIES_COLORS.Income}
                     strokeWidth={2}
                     dot={{ r: 4 }}
@@ -289,7 +290,7 @@ export function ChartsPage() {
                   <Line
                     type="monotone"
                     dataKey="expenses"
-                    name="Expenses (actual)"
+                    name={t('charts.series.expensesActual')}
                     stroke={SERIES_COLORS.Expenses}
                     strokeWidth={2}
                     dot={{ r: 4 }}
@@ -297,7 +298,7 @@ export function ChartsPage() {
                   <Line
                     type="monotone"
                     dataKey="plannedExpenses"
-                    name="Expenses (plan)"
+                    name={t('charts.series.expensesPlan')}
                     stroke={SERIES_COLORS.Plan}
                     strokeWidth={2}
                     strokeDasharray="6 3"
@@ -313,7 +314,7 @@ export function ChartsPage() {
                 cumulative cash pile — this line already is the savings
                 trajectory. The dashed plan line shows how the SOLL
                 forecast tracked it. */}
-            <ChartContainer title="Cash Balance Over Time (savings trajectory, plan dashed)">
+            <ChartContainer title={t('charts.charts.balance.title')}>
               <ResponsiveContainer width="100%" height={350}>
                 <LineChart data={overallData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -328,7 +329,7 @@ export function ChartsPage() {
                   <Line
                     type="monotone"
                     dataKey="balance"
-                    name="Balance (actual)"
+                    name={t('charts.series.balanceActual')}
                     stroke={SERIES_COLORS.Balance}
                     strokeWidth={2}
                     dot={{ r: 4 }}
@@ -336,7 +337,7 @@ export function ChartsPage() {
                   <Line
                     type="monotone"
                     dataKey="plannedBalance"
-                    name="Balance (plan)"
+                    name={t('charts.series.balancePlan')}
                     stroke={SERIES_COLORS.Plan}
                     strokeWidth={2}
                     strokeDasharray="6 3"
@@ -348,7 +349,7 @@ export function ChartsPage() {
 
             {/* ── Top expense rows across all budgets ── */}
             {topItemsData.length > 0 && (
-              <ChartContainer title="Top Expense Rows (all budgets, IST)">
+              <ChartContainer title={t('charts.charts.topExpenses.title')}>
                 <ResponsiveContainer
                   width="100%"
                   height={Math.max(350, topItemsData.length * 34 + 60)}
@@ -372,7 +373,7 @@ export function ChartsPage() {
                     />
                     <Bar
                       dataKey="value"
-                      name="Spent (IST)"
+                      name={t('charts.series.spentIst')}
                       shape={renderTopItemBar}
                       radius={[0, 4, 4, 0]}
                     >
@@ -392,7 +393,7 @@ export function ChartsPage() {
           {budgets && budgets.length > 0 && (
             <div className="mb-6">
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Select Budget
+                {t('charts.labels.selectBudget')}
               </label>
               <select
                 value={budgetId ?? ''}
@@ -416,7 +417,7 @@ export function ChartsPage() {
           {budgets && budgets.length === 0 && (
             <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center dark:border-gray-700 dark:bg-gray-800">
               <p className="text-gray-500 dark:text-gray-500">
-                No budgets available. Create a budget first to see charts.
+                {t('charts.emptyState.monthly')}
               </p>
             </div>
           )}
@@ -425,7 +426,7 @@ export function ChartsPage() {
 
           {chartData && (
             <p className="mb-4 text-sm text-gray-500 dark:text-gray-500">
-              Tip: click a bar or pie slice to see that category's items.
+              {t('charts.tip')}
             </p>
           )}
 
@@ -437,7 +438,7 @@ export function ChartsPage() {
                   (Recharts rotation + auto-hidden ticks), making bars
                   appear misattributed. Y-axis category names are
                   always unambiguous. */}
-              <ChartContainer title="Expenses by Category (SOLL vs IST)">
+              <ChartContainer title={t('charts.charts.expensesByCategory.title')}>
                 <ResponsiveContainer width="100%" height={chartHeight}>
                   <BarChart
                     data={activeCategories}
@@ -483,7 +484,7 @@ export function ChartsPage() {
               {/* ── Pie chart: expense distribution ─── */}
               {/* Donut style: percentages on the slices (values in the
                   tooltip), hole keeps the visual weight light. */}
-              <ChartContainer title="Expense Distribution (IST)">
+              <ChartContainer title={t('charts.charts.expenseDistribution.title')}>
                 <ResponsiveContainer width="100%" height={chartHeight}>
                   <PieChart>
                     <Pie
@@ -521,7 +522,7 @@ export function ChartsPage() {
 
               {/* ── Variance chart: SOLL − IST per category ── */}
               <ChartContainer
-                title="Category Variance (SOLL − IST · teal = under budget, terracotta = overspent)"
+                title={t('charts.charts.categoryVariance.title')}
                 className="lg:col-span-2"
               >
                 <ResponsiveContainer width="100%" height={chartHeight}>
@@ -545,7 +546,7 @@ export function ChartsPage() {
                     <ReferenceLine x={0} stroke={SERIES_COLORS.Plan} />
                     <Bar
                       dataKey="variance"
-                      name="SOLL − IST"
+                      name={t('charts.series.sollMinusIst')}
                       radius={[0, 4, 4, 0]}
                       onClick={(data) =>
                         selectCategory((data as { label?: string })?.label)
@@ -569,13 +570,13 @@ export function ChartsPage() {
 
               {/* ── Income vs Expenses summary ──────── */}
               <ChartContainer
-                title="Income vs Expenses"
+                title={t('charts.charts.incomeVsExpensesSummary.title')}
                 className="lg:col-span-2"
               >
                 <div className="grid grid-cols-2 gap-6">
                   <div className="rounded-lg bg-brand-50 p-4 dark:bg-brand-900/30">
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Projected Balance (SOLL)
+                      {t('charts.labels.projectedBalance')}
                     </p>
                     <p className="text-2xl font-bold text-brand-700 dark:text-brand-300">
                       {formatCurrency(chartData.income_vs_expenses.projected)}
@@ -583,7 +584,7 @@ export function ChartsPage() {
                   </div>
                   <div className="rounded-lg bg-green-50 p-4 dark:bg-green-900/30">
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Actual Balance (IST)
+                      {t('charts.labels.actualBalance')}
                     </p>
                     <p className="text-2xl font-bold text-green-700 dark:text-green-300">
                       {formatCurrency(chartData.income_vs_expenses.actual)}

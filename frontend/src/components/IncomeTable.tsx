@@ -6,6 +6,7 @@
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { incomeApi } from '../api';
 import { invalidateBudgetData } from '../utils/queryKeys';
 import { DifferenceBadge } from './DifferenceBadge';
@@ -19,6 +20,7 @@ interface IncomeTableProps {
 }
 
 export function IncomeTable({ budgetId, incomes }: IncomeTableProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   const updateMutation = useMutation({
@@ -48,16 +50,16 @@ export function IncomeTable({ budgetId, incomes }: IncomeTableProps) {
   return (
     <section className="mb-6">
       <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
-        Income / Einkommen
+        {t('detail.income.heading')}
       </h2>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[500px]">
           <thead>
             <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:border-gray-700 dark:text-gray-500">
-              <th className="py-2 pl-0 pr-4">Label</th>
-              <th className="py-2 pr-4 text-right">SOLL (Projected)</th>
-              <th className="py-2 pr-4 text-right">IST (Actual)</th>
-              <th className="py-2 pr-4 text-right">Difference</th>
+              <th className="py-2 pl-0 pr-4">{t('detail.income.label')}</th>
+              <th className="py-2 pr-4 text-right">{t('detail.income.sollProjected')}</th>
+              <th className="py-2 pr-4 text-right">{t('detail.income.istActual')}</th>
+              <th className="py-2 pr-4 text-right">{t('detail.income.difference')}</th>
               <th className="py-2"></th>
             </tr>
           </thead>
@@ -109,7 +111,7 @@ export function IncomeTable({ budgetId, incomes }: IncomeTableProps) {
                   <button
                     onClick={() => deleteMutation.mutate(income.id)}
                     className="text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400"
-                    title="Delete"
+                    title={t('common.actions.delete')}
                   >
                     <Trash2Icon size={16} />
                   </button>
@@ -122,7 +124,7 @@ export function IncomeTable({ budgetId, incomes }: IncomeTableProps) {
                   colSpan={5}
                   className="py-4 pl-0 text-center text-sm text-gray-400 dark:text-gray-500"
                 >
-                  No income entries yet.
+                  {t('detail.income.empty')}
                 </td>
               </tr>
             )}

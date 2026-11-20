@@ -11,6 +11,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Bar,
   BarChart,
@@ -40,6 +41,7 @@ export function CategorySpendingModal({
   // Year-over-year comparison is off by default — the plain year view
   // is what the button promises; the toggle is for digging deeper.
   const [compare, setCompare] = useState(false);
+  const { t } = useTranslation();
 
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.yearlyComparison,
@@ -77,17 +79,17 @@ export function CategorySpendingModal({
 
   return (
     <Modal
-      title={`Category Spending ${year} (IST)`}
+      title={t('detail.spending.title', { year })}
       onClose={onClose}
       widthClassName="max-w-2xl"
     >
       {isLoading || !active ? (
         <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-500">
-          Loading…
+          {t('detail.spending.loading')}
         </p>
       ) : chartData.length === 0 ? (
         <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-500">
-          No expense categories recorded for this year.
+          {t('detail.spending.empty')}
         </p>
       ) : (
         <>
@@ -98,7 +100,7 @@ export function CategorySpendingModal({
               className={pillButtonClass(!compare)}
               onClick={() => setCompare(false)}
             >
-              {year} only
+              {t('detail.spending.yearOnly', { year })}
             </button>
             <button
               type="button"
@@ -107,11 +109,11 @@ export function CategorySpendingModal({
               disabled={!previous}
               title={
                 previous
-                  ? `Compare with ${year - 1}`
-                  : `No data for ${year - 1} to compare with`
+                  ? t('detail.spending.compareTooltip', { year: year - 1 })
+                  : t('detail.spending.noCompareData', { year: year - 1 })
               }
             >
-              vs. {year - 1}
+              {t('detail.spending.compareWith', { year: year - 1 })}
             </button>
           </div>
 
@@ -142,13 +144,13 @@ export function CategorySpendingModal({
                   <Legend />
                   <Bar
                     dataKey="Spent"
-                    name={`${year} (IST)`}
+                    name={t('detail.spending.legendYear', { year })}
                     fill={SERIES_COLORS.Projected}
                     radius={[0, 4, 4, 0]}
                   />
                   <Bar
                     dataKey="Prev"
-                    name={`${year - 1} (IST)`}
+                    name={t('detail.spending.legendYear', { year: year - 1 })}
                     fill={SERIES_COLORS.Plan}
                     radius={[0, 4, 4, 0]}
                   />
@@ -156,7 +158,7 @@ export function CategorySpendingModal({
               ) : (
                 <Bar
                   dataKey="Spent"
-                  name="Spent"
+                  name={t('detail.spending.legendSpent')}
                   fill={SERIES_COLORS.Invested}
                   radius={[0, 4, 4, 0]}
                 />
@@ -168,10 +170,12 @@ export function CategorySpendingModal({
           <table className="mt-4 w-full text-sm">
             <thead>
               <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:border-gray-700 dark:text-gray-500">
-                <th className="py-2">Category</th>
-                <th className="py-2 text-right">Total (IST)</th>
+                <th className="py-2">{t('detail.spending.category')}</th>
+                <th className="py-2 text-right">{t('detail.spending.total')}</th>
                 {compare && previous && (
-                  <th className="py-2 text-right">Δ vs. {year - 1}</th>
+                  <th className="py-2 text-right">
+                    {t('detail.spending.delta', { year: year - 1 })}
+                  </th>
                 )}
               </tr>
             </thead>

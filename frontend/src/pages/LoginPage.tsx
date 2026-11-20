@@ -6,24 +6,34 @@
  */
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { useAuth } from '../hooks/useAuth';
 import { LogoMark } from '../components/Logo';
 
-const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email'),
-  password: z.string().min(1, 'Password is required'),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
+type LoginFormData = {
+  email: string;
+  password: string;
+};
 
 export function LoginPage() {
   const { login } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Built per render so validation messages follow the UI language
+  const loginSchema = useMemo(
+    () =>
+      z.object({
+        email: z.string().email(t('common.validation.invalidEmail')),
+        password: z.string().min(1, t('common.validation.passwordRequired')),
+      }),
+    [t],
+  );
 
   const {
     register,
@@ -39,7 +49,7 @@ export function LoginPage() {
       await login(data);
       navigate('/');
     } catch {
-      setErrorMessage('Incorrect email or password.');
+      setErrorMessage(t('common.errors.incorrectCredentials'));
     }
   };
 
@@ -51,7 +61,7 @@ export function LoginPage() {
             <LogoMark variant="light" size={64} />
           </div>
           <h1 className="mb-6 text-center text-2xl font-bold text-gray-900 dark:text-white">
-            Log in to frekl.
+            {t('auth.login.title')}
           </h1>
 
           {errorMessage && (
@@ -63,13 +73,13 @@ export function LoginPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Email
+                {t('auth.login.email')}
               </label>
               <input
                 {...register('email')}
                 type="email"
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                placeholder="you@example.com"
+                placeholder={t('auth.login.emailPlaceholder')}
               />
               {errors.email && (
                 <p className="mt-1 text-xs text-red-600 dark:text-red-400">
@@ -80,7 +90,7 @@ export function LoginPage() {
 
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Password
+                {t('auth.login.password')}
               </label>
               <input
                 {...register('password')}
@@ -100,17 +110,17 @@ export function LoginPage() {
               disabled={isSubmitting}
               className="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
             >
-              {isSubmitting ? 'Logging in…' : 'Log in'}
+              {isSubmitting ? t('common.actions.loggingIn') : t('common.actions.logIn')}
             </button>
           </form>
 
           <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
-            Don&apos;t have an account?{' '}
+            {t('auth.switch.noAccount')}{' '}
             <Link
               to="/register"
               className="font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
             >
-              Register
+              {t('common.actions.register')}
             </Link>
           </p>
         </div>

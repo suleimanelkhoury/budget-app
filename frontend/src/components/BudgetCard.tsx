@@ -9,6 +9,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { budgetsApi } from '../api';
+import { useTranslation, Trans } from 'react-i18next';
 import { formatCurrency, formatMonthYear } from '../utils/format';
 import { toNumber } from '../utils/format';
 import { balanceColor } from '../utils/balance';
@@ -24,6 +25,7 @@ export function BudgetCard({
   budget: Budget;
   isCurrent?: boolean;
 }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -92,7 +94,7 @@ export function BudgetCard({
           </h3>
           {isCurrent && (
             <span className="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700 dark:bg-brand-900 dark:text-brand-300">
-              Current
+              {t('dashboard.card.current')}
             </span>
           )}
         </div>
@@ -108,7 +110,7 @@ export function BudgetCard({
               }}
               disabled={cloneMutation.isPending}
               className="rounded-md px-2 py-1 text-xs font-medium text-brand-600 transition-colors hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-950 disabled:opacity-50"
-              title={`Clone this budget into ${nextTitle} — projected amounts are copied, actual amounts start at zero`}
+              title={t('dashboard.card.cloneTitle', { month: nextTitle })}
             >
               +
             </button>
@@ -120,8 +122,10 @@ export function BudgetCard({
             }}
             disabled={exportMutation.isPending}
             className="rounded-md p-1 text-gray-400 transition-colors hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950 dark:hover:text-brand-400 disabled:opacity-50"
-            title="Export budget to Excel"
-            aria-label={`Export budget ${budget.title} to Excel`}
+            title={t('dashboard.card.exportTitle')}
+            aria-label={t('dashboard.card.exportAriaLabel', {
+              title: budget.title,
+            })}
           >
             <DownloadIcon size={16} />
           </button>
@@ -131,8 +135,10 @@ export function BudgetCard({
               setShowDeleteConfirm(true);
             }}
             className="rounded-md p-1 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950 dark:hover:text-red-400"
-            title="Delete budget"
-            aria-label={`Delete budget ${budget.title}`}
+            title={t('dashboard.card.deleteTitle')}
+            aria-label={t('dashboard.card.deleteAriaLabel', {
+              title: budget.title,
+            })}
           >
             <Trash2Icon size={16} />
           </button>
@@ -141,25 +147,33 @@ export function BudgetCard({
 
       <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
         <div>
-          <p className="text-gray-500 dark:text-gray-500">Gehalt</p>
+          <p className="text-gray-500 dark:text-gray-500">
+            {t('dashboard.card.labels.gehalt')}
+          </p>
           <p className="font-semibold text-gray-900 dark:text-gray-100">
             {summary ? formatCurrency(summary.total_actual_gehalt) : '—'}
           </p>
         </div>
         <div>
-          <p className="text-gray-500 dark:text-gray-500">Extra</p>
+          <p className="text-gray-500 dark:text-gray-500">
+            {t('dashboard.card.labels.extra')}
+          </p>
           <p className="font-semibold text-gray-900 dark:text-gray-100">
             {summary ? formatCurrency(summary.total_actual_extra) : '—'}
           </p>
         </div>
         <div>
-          <p className="text-gray-500 dark:text-gray-500">Expenses</p>
+          <p className="text-gray-500 dark:text-gray-500">
+            {t('dashboard.card.labels.expenses')}
+          </p>
           <p className="font-semibold text-gray-900 dark:text-gray-100">
             {summary ? formatCurrency(summary.total_actual_expenses) : '—'}
           </p>
         </div>
         <div>
-          <p className="text-gray-500 dark:text-gray-500">Balance</p>
+          <p className="text-gray-500 dark:text-gray-500">
+            {t('dashboard.card.labels.balance')}
+          </p>
           <p className={`font-semibold ${balanceColor(balance)}`}>
             {summary ? formatCurrency(summary.actual_balance) : '—'}
           </p>
@@ -170,20 +184,19 @@ export function BudgetCard({
       {showDeleteConfirm && (
         <div onClick={(e) => e.stopPropagation()}>
           <ConfirmDialog
-            title="Delete Budget"
+            title={t('dashboard.card.deleteConfirm.title')}
             message={
-              <>
-                Are you sure you want to delete{' '}
-                <span className="font-semibold">{budget.title}</span>? This
-                will permanently remove all categories, expense items, and
-                income entries. This action cannot be undone.
-              </>
+              <Trans
+                i18nKey="dashboard.card.deleteConfirm.message"
+                values={{ title: budget.title }}
+                components={{ bold: <span className="font-semibold" /> }}
+              />
             }
-            confirmLabel="Delete Budget"
+            confirmLabel={t('dashboard.card.deleteConfirm.confirmLabel')}
             isPending={deleteMutation.isPending}
             errorMessage={
               deleteMutation.isError
-                ? 'Failed to delete budget. Please try again.'
+                ? t('dashboard.card.deleteConfirm.error')
                 : null
             }
             onConfirm={() => deleteMutation.mutate()}

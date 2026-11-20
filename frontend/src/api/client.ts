@@ -8,6 +8,7 @@
 
 import axios, { type AxiosInstance } from 'axios';
 import { ACCESS_TOKEN_KEY, USER_KEY } from '../utils/storage';
+import i18n from '../i18n';
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
 const API_PREFIX = import.meta.env.VITE_API_PREFIX ?? '/api';
@@ -26,6 +27,9 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // Send the UI language so backend error messages come back
+    // localized (the backend carries bilingual error texts)
+    config.headers['Accept-Language'] = i18n.language;
     return config;
   },
   (error) => Promise.reject(error),

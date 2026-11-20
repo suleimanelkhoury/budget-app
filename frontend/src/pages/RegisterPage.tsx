@@ -6,30 +6,43 @@
  */
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { useAuth } from '../hooks/useAuth';
 import { LogoMark } from '../components/Logo';
 
-const registerSchema = z
-  .object({
-    email: z.string().email('Please enter a valid email'),
-    password: z.string().min(8, 'Password must be at least 8 characters'),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: 'Passwords do not match',
-    path: ['confirmPassword'],
-  });
-
-type RegisterFormData = z.infer<typeof registerSchema>;
+type RegisterFormData = {
+  email: string;
+  password: string;
+  confirmPassword: string;
+};
 
 export function RegisterPage() {
   const { register: registerUser } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Built per render so validation messages follow the UI language
+  const registerSchema = useMemo(
+    () =>
+      z
+        .object({
+          email: z.string().email(t('common.validation.invalidEmail')),
+          password: z
+            .string()
+            .min(8, t('common.validation.passwordMinLength')),
+          confirmPassword: z.string(),
+        })
+        .refine((data) => data.password === data.confirmPassword, {
+          message: t('common.validation.passwordsDoNotMatch'),
+          path: ['confirmPassword'],
+        }),
+    [t],
+  );
 
   const {
     register,
@@ -46,7 +59,9 @@ export function RegisterPage() {
       navigate('/');
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : 'Registration failed.';
+        err instanceof Error
+          ? err.message
+          : t('common.errors.registrationFailed');
       setErrorMessage(message);
     }
   };
@@ -59,7 +74,7 @@ export function RegisterPage() {
             <LogoMark variant="light" size={64} />
           </div>
           <h1 className="mb-6 text-center text-2xl font-bold text-gray-900 dark:text-white">
-            Create your account
+            {t('auth.register.title')}
           </h1>
 
           {errorMessage && (
@@ -71,13 +86,13 @@ export function RegisterPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Email
+                {t('auth.register.email')}
               </label>
               <input
                 {...register('email')}
                 type="email"
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                placeholder="you@example.com"
+                placeholder={t('auth.register.emailPlaceholder')}
               />
               {errors.email && (
                 <p className="mt-1 text-xs text-red-600 dark:text-red-400">
@@ -88,13 +103,13 @@ export function RegisterPage() {
 
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Password
+                {t('auth.register.password')}
               </label>
               <input
                 {...register('password')}
                 type="password"
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                placeholder="At least 8 characters"
+                placeholder={t('auth.register.passwordPlaceholder')}
               />
               {errors.password && (
                 <p className="mt-1 text-xs text-red-600 dark:text-red-400">
@@ -105,13 +120,13 @@ export function RegisterPage() {
 
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Confirm Password
+                {t('auth.register.confirmPassword')}
               </label>
               <input
                 {...register('confirmPassword')}
                 type="password"
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                placeholder="Re-enter your password"
+                placeholder={t('auth.register.confirmPasswordPlaceholder')}
               />
               {errors.confirmPassword && (
                 <p className="mt-1 text-xs text-red-600 dark:text-red-400">
@@ -125,17 +140,19 @@ export function RegisterPage() {
               disabled={isSubmitting}
               className="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
             >
-              {isSubmitting ? 'Creating account…' : 'Register'}
+              {isSubmitting
+                ? t('common.actions.creatingAccount')
+                : t('common.actions.register')}
             </button>
           </form>
 
           <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
-            Already have an account?{' '}
+            {t('auth.switch.hasAccount')}{' '}
             <Link
               to="/login"
               className="font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
             >
-              Log in
+              {t('common.actions.logIn')}
             </Link>
           </p>
         </div>

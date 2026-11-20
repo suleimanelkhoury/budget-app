@@ -29,6 +29,14 @@ class Budget(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+    # "Last edited" stamp — bumped directly on budget edits (onupdate) and
+    # from the mutating child endpoints via services.touch.touch_budget
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
 
     # ── Relationships ──────────────────────────
     user: Mapped["User"] = relationship("User", back_populates="budgets")

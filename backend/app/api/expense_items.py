@@ -13,6 +13,7 @@ from app.schemas.expense_item import (
     ExpenseItemUpdate,
 )
 from app.services.ownership import get_user_category, get_user_expense_item
+from app.services.touch import touch_budget_by_id
 
 router = APIRouter(prefix="/api", tags=["expense-items"])
 
@@ -39,6 +40,7 @@ def create_expense_item(
         actual_cost=item_in.actual_cost,
     )
     db.add(item)
+    touch_budget_by_id(db, category.budget_id)
     db.commit()
     db.refresh(item)
     return item
@@ -62,6 +64,7 @@ def update_expense_item(
     for field, value in update_data.items():
         setattr(item, field, value)
 
+    touch_budget_by_id(db, item.category.budget_id)
     db.commit()
     db.refresh(item)
     return item
@@ -79,5 +82,6 @@ def delete_expense_item(
 ) -> None:
     """Delete an expense item from a category."""
     item = get_user_expense_item(db, item_id, current_user)
+    touch_budget_by_id(db, item.category.budget_id)
     db.delete(item)
     db.commit()

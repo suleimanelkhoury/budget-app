@@ -21,7 +21,10 @@
  * selected expense row can be deleted with the "−" next to it (income
  * rows can't be deleted). Escape clears the calculator and, when it's
  * already empty, deselects the row; clicking any empty spot on the
- * page also deselects it.
+ * page also deselects it. Under the budget selector, the page shows
+ * when the active budget was last edited (backend `updated_at` stamp,
+ * bumped by every mutating endpoint — budget rename, categories, rows,
+ * income, amounts committed here).
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -30,7 +33,7 @@ import { budgetsApi, expenseItemsApi, incomeApi } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Spinner } from '../components/Spinner';
 import { evaluateExpression, isOperatorChar } from '../utils/calculator';
-import { formatCurrency, toNumber } from '../utils/format';
+import { formatCurrency, formatDateTime, formatRelativeTime, toNumber } from '../utils/format';
 import { queryKeys, invalidateBudgetData } from '../utils/queryKeys';
 import type {
   BudgetDetail,
@@ -200,6 +203,14 @@ export function CalculatorPage() {
             </option>
           ))}
         </select>
+        {budget && (
+          <p
+            className="mt-1.5 text-xs text-gray-500 dark:text-gray-400"
+            title={`Last edited ${formatDateTime(budget.updated_at)}`}
+          >
+            Last edited: {formatRelativeTime(budget.updated_at)}
+          </p>
+        )}
       </div>
 
       {budgetLoading && <Spinner />}

@@ -1,6 +1,6 @@
 """Pydantic schemas for Budget — create, update, response, and detail (nested)."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -71,6 +71,20 @@ class BudgetResponse(BudgetBase):
     id: int
     user_id: int
     created_at: datetime
+    updated_at: datetime
+
+    @field_validator("created_at", "updated_at", mode="after")
+    @classmethod
+    def naive_datetimes_are_utc(cls, v: datetime) -> datetime:
+        """Attach UTC to tz-naive timestamps.
+
+        SQLite's CURRENT_TIMESTAMP returns naive datetimes that are
+        actually UTC — without an explicit offset, browsers parse them
+        as local time and every displayed time is off by the UTC
+        offset. PostgreSQL returns tz-aware values, which pass through
+        untouched.
+        """
+        return v.replace(tzinfo=UTC) if v.tzinfo is None else v
 
 
 class BudgetDetail(BudgetResponse):

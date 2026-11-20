@@ -31,6 +31,7 @@ from app.schemas.summary import (
 from app.services.excel_export import build_budget_excel
 from app.services.ownership import get_user_budget
 from app.services.summary import compare_user_budgets, compare_user_by_year
+from app.services.touch import touch_budget
 
 router = APIRouter(prefix="/api/budgets", tags=["budgets"])
 
@@ -274,6 +275,10 @@ def update_budget(
     for field, value in update_data.items():
         setattr(budget, field, value)
 
+    # Explicit touch: the column's onupdate only fires when at least one
+    # field actually changes, and the response should always carry a
+    # fresh stamp after a successful edit.
+    touch_budget(db, budget)
     db.commit()
     db.refresh(budget)
     return budget

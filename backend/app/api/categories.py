@@ -9,6 +9,7 @@ from app.models.category import Category
 from app.models.user import User
 from app.schemas.category import CategoryCreate, CategoryResponse, CategoryUpdate
 from app.services.ownership import get_user_budget, get_user_category
+from app.services.touch import touch_budget, touch_budget_by_id
 
 router = APIRouter(prefix="/api", tags=["categories"])
 
@@ -34,6 +35,7 @@ def create_category(
         sort_order=category_in.sort_order,
     )
     db.add(category)
+    touch_budget(db, budget)
     db.commit()
     db.refresh(category)
     return category
@@ -57,6 +59,7 @@ def update_category(
     for field, value in update_data.items():
         setattr(category, field, value)
 
+    touch_budget_by_id(db, category.budget_id)
     db.commit()
     db.refresh(category)
     return category
@@ -74,5 +77,6 @@ def delete_category(
 ) -> None:
     """Delete a category and all its expense items (cascade)."""
     category = get_user_category(db, category_id, current_user)
+    touch_budget_by_id(db, category.budget_id)
     db.delete(category)
     db.commit()

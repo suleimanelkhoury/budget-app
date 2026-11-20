@@ -84,6 +84,47 @@ export function formatDate(isoDate: string): string {
   }).format(date);
 }
 
+/** Format a date as a German short time, e.g. "16:05". */
+function formatTime(date: Date): string {
+  return new Intl.DateTimeFormat('de-DE', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
+
+/**
+ * Format an ISO date string as a German date with time.
+ *
+ * @example
+ * formatDateTime("2026-07-14T16:05:00")  // "14. Juli 2026, 16:05"
+ */
+export function formatDateTime(isoDate: string): string {
+  return `${formatDate(isoDate)}, ${formatTime(new Date(isoDate))}`;
+}
+
+/**
+ * Format an ISO date string relative to now, in English (the UI's
+ * language). Falls back to the German long date for anything older
+ * than a week.
+ *
+ * @example
+ * formatRelativeTime("2026-11-20T16:04:00")  // "just now" / "5 min ago"
+ * formatRelativeTime("2026-11-19T09:00:00")  // "yesterday, 09:00"
+ * formatRelativeTime("2026-07-14T10:00:00")  // "14. Juli 2026"
+ */
+export function formatRelativeTime(isoDate: string): string {
+  const date = new Date(isoDate);
+  const diffMinutes = Math.floor((Date.now() - date.getTime()) / 60000);
+  if (diffMinutes < 1) return 'just now';
+  if (diffMinutes < 60) return `${diffMinutes} min ago`;
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours} h ago`;
+  if (diffHours < 48) return `yesterday, ${formatTime(date)}`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) return `${diffDays} days ago`;
+  return formatDate(isoDate);
+}
+
 /**
  * Format a difference value with a + sign for positive numbers.
  *

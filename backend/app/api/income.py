@@ -9,6 +9,7 @@ from app.models.income import Income
 from app.models.user import User
 from app.schemas.income import IncomeCreate, IncomeResponse, IncomeUpdate
 from app.services.ownership import get_user_budget, get_user_income
+from app.services.touch import touch_budget, touch_budget_by_id
 
 router = APIRouter(prefix="/api", tags=["income"])
 
@@ -35,6 +36,7 @@ def create_income(
         actual_amount=income_in.actual_amount,
     )
     db.add(income)
+    touch_budget(db, budget)
     db.commit()
     db.refresh(income)
     return income
@@ -58,6 +60,7 @@ def update_income(
     for field, value in update_data.items():
         setattr(income, field, value)
 
+    touch_budget_by_id(db, income.budget_id)
     db.commit()
     db.refresh(income)
     return income
@@ -75,5 +78,6 @@ def delete_income(
 ) -> None:
     """Delete an income entry from a budget."""
     income = get_user_income(db, income_id, current_user)
+    touch_budget_by_id(db, income.budget_id)
     db.delete(income)
     db.commit()

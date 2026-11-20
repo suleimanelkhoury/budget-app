@@ -1,1 +1,1 @@
-"""Budget App backend package."""
+"""frekl backend package."""

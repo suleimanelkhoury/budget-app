@@ -84,4 +84,4 @@ async def health_check() -> dict[str, str]:
 @app.get("/", tags=["root"])
 async def root() -> dict[str, str]:
     """Root endpoint."""
-    return {"message": "Budget App API — see /docs for documentation"}
+    return {"message": "frekl API — see /docs for documentation"}

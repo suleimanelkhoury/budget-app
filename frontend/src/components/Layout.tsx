@@ -20,6 +20,7 @@ import {
   SunIcon,
   XIcon,
 } from './Icons';
+import { LogoMark } from './Logo';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboardIcon },
@@ -48,8 +49,12 @@ export function Layout() {
         }`}
       >
         <div className="flex h-16 items-center justify-between px-6">
-          <Link to="/" className="font-display text-xl font-bold text-white">
-            Budget App
+          <Link
+            to="/"
+            className="flex items-center gap-3 font-display text-3xl font-bold text-white"
+          >
+            <LogoMark variant="dark" size={42} className="shrink-0" />
+            frekl.
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}

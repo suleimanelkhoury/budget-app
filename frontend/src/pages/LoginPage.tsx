@@ -11,6 +11,7 @@ import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { useAuth } from '../hooks/useAuth';
+import { LogoMark } from '../components/Logo';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -46,8 +47,11 @@ export function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-gray-950">
       <div className="w-full max-w-md">
         <div className="rounded-2xl bg-white p-8 shadow-lg dark:bg-gray-800">
+          <div className="mb-6 flex justify-center">
+            <LogoMark variant="light" size={64} />
+          </div>
           <h1 className="mb-6 text-center text-2xl font-bold text-gray-900 dark:text-white">
-            Log in to Budget App
+            Log in to frekl.
           </h1>
 
           {errorMessage && (

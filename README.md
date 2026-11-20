@@ -1,4 +1,4 @@
-# Budget App
+# frekl.
 
 A full-stack monthly budgeting application that mirrors a personal Excel budget sheet — with projected (SOLL) vs. actual (IST) tracking, category subtotals, balance calculations, charts, and Excel import.
 

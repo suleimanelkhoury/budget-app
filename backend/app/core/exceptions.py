@@ -1,4 +1,4 @@
-"""Custom exception classes for the Budget App.
+"""Custom exception classes for frekl.
 
 These are raised by application code and caught by the global exception
 handlers registered in app/main.py, which convert them into consistent

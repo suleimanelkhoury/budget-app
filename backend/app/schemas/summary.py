@@ -27,7 +27,7 @@ class BudgetSummary(BaseModel):
     # Balance = income - expenses
     projected_balance: Decimal  # SOLL BALANCE
     actual_balance: Decimal  # IST BALANCE
-    balance_difference: Decimal  # UNTERSCHIED (projected balance - actual balance)
+    balance_difference: Decimal  # UNTERSCHIED (actual balance - projected balance)
 
     # Expense difference
     expense_difference: Decimal  # projected expenses - actual expenses

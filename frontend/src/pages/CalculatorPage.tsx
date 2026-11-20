@@ -24,7 +24,9 @@
  * page also deselects it. Under the budget selector, the page shows
  * when the active budget was last edited (backend `updated_at` stamp,
  * bumped by every mutating endpoint — budget rename, categories, rows,
- * income, amounts committed here).
+ * income, amounts committed here). The overview column shows the
+ * budget's balance above the Income section — grand totals from the
+ * summary endpoint, refreshed after every committed amount.
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -33,10 +35,12 @@ import { budgetsApi, expenseItemsApi, incomeApi } from '../api';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Spinner } from '../components/Spinner';
 import { evaluateExpression, isOperatorChar } from '../utils/calculator';
-import { formatCurrency, formatDateTime, formatRelativeTime, toNumber } from '../utils/format';
+import { formatCurrency, formatDateTime, formatDifference, formatRelativeTime, toNumber } from '../utils/format';
+import { balanceColor } from '../utils/balance';
 import { queryKeys, invalidateBudgetData } from '../utils/queryKeys';
 import type {
   BudgetDetail,
+  BudgetSummary,
   Category,
   ExpenseItem,
   Income,
@@ -134,6 +138,16 @@ export function CalculatorPage() {
     enabled: !!budgetId,
   });
 
+  // Grand totals for the active budget — the IST BALANCE block in the
+  // calculator panel reads from this. invalidateBudgetData already
+  // invalidates the summary after every mutation, so the balance is
+  // fresh after every committed amount.
+  const { data: summary } = useQuery({
+    queryKey: queryKeys.budget.summary(budgetId!),
+    queryFn: () => budgetsApi.getSummary(budgetId!),
+    enabled: !!budgetId,
+  });
+
   // New rows start at 0/0 — values are assigned later with the
   // calculator. The created row is selected right away.
   const createItemMutation = useMutation({
@@ -227,6 +241,7 @@ export function CalculatorPage() {
           <div className="lg:col-span-2">
             <BudgetOverview
               budget={budget}
+              summary={summary}
               selectedItemId={selectedRow}
               newRowCategoryId={newRowCategoryId}
               newRowLabel={newRowLabel}
@@ -262,6 +277,7 @@ export function CalculatorPage() {
 
 function BudgetOverview({
   budget,
+  summary,
   selectedItemId,
   newRowCategoryId,
   newRowLabel,
@@ -272,6 +288,7 @@ function BudgetOverview({
   onCancelNewRow,
 }: {
   budget: BudgetDetail;
+  summary: BudgetSummary | undefined;
   selectedItemId: string;
   newRowCategoryId: number | '';
   newRowLabel: string;
@@ -354,6 +371,39 @@ function BudgetOverview({
 
   return (
     <div className="space-y-4">
+      {/* ── Balance — the budget's running result ──
+          Updates after every committed amount (the summary
+          query is invalidated by each mutation). */}
+      {summary && (
+        <section className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              Balance
+            </h2>
+            <span className="text-right">
+              <span
+                data-testid="calculator-balance"
+                className={`text-sm font-semibold ${balanceColor(
+                  toNumber(summary.actual_balance),
+                )}`}
+              >
+                {formatCurrency(summary.actual_balance)}
+              </span>
+              <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">
+                ≠ from SOLL{' '}
+                <span
+                  className={balanceColor(
+                    toNumber(summary.balance_difference),
+                  )}
+                >
+                  {formatDifference(summary.balance_difference)}
+                </span>
+              </span>
+            </span>
+          </div>
+        </section>
+      )}
+
       {/* ── Incomes ───────────────────────────── */}
       <section className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
@@ -1111,7 +1161,7 @@ function CalculatorPanel({
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
       {/* ── Calculator display ────────────────── */}
-      <div className="mt-3 rounded-2xl bg-gray-900 px-3 py-2.5 text-right dark:bg-gray-950">
+      <div className="rounded-2xl bg-gray-900 px-3 py-2.5 text-right dark:bg-gray-950">
         <div className="flex items-center justify-between">
           {/* IST/SOLL tag — click to toggle which value is edited */}
           <button

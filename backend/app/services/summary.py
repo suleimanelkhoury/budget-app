@@ -91,7 +91,9 @@ def calculate_budget_summary(budget: Budget, db: Session) -> BudgetSummary:
     # ── Balances (income - expenses) ───────────
     projected_balance = total_projected_income - total_projected_expenses
     actual_balance = total_actual_income - total_actual_expenses
-    balance_difference = projected_balance - actual_balance
+    # IST minus SOLL: positive means the actual balance beat the plan,
+    # matching the teal-for-positive / burgundy-for-negative coloring.
+    balance_difference = actual_balance - projected_balance
 
     # ── Expense difference ─────────────────────
     expense_difference = total_projected_expenses - total_actual_expenses

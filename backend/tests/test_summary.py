@@ -82,8 +82,8 @@ class TestBudgetSummary:
         assert Decimal(data["projected_balance"]) == Decimal("1420.00")
         assert Decimal(data["actual_balance"]) == Decimal("1375.00")
 
-        # Balance difference: 1420 - 1375 = 45
-        assert Decimal(data["balance_difference"]) == Decimal("45.00")
+        # Balance difference: 1375 - 1420 = -45 (IST below SOLL → negative)
+        assert Decimal(data["balance_difference"]) == Decimal("-45.00")
 
         # Expense difference: 1380 - 1425 = -45
         assert Decimal(data["expense_difference"]) == Decimal("-45.00")
